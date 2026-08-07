@@ -256,7 +256,7 @@ docx-formatter-plus/
 
 ### 通过客户端安装
 
-将 skill ZIP 上传至 Codex 或 任意AI客户端对应的 Skill 安装位置即可。Agent 会自动读取 `SKILL.md` 中的 frontmatter 和指令。
+将 skill ZIP 上传至 Codex 或 任意AI办公客户端对应的 Skill 安装位置即可。Agent 会自动读取 `SKILL.md` 中的 frontmatter 和指令。
 
 ### 手动安装
 
