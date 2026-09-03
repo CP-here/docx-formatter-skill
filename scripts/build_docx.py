@@ -239,6 +239,93 @@ def add_body_with_math(doc, parts):
 
 
 # ============================================================
+# CODE BLOCK / DATA TABLE / MATH-IN-CELL HELPERS
+# ============================================================
+
+def add_code_block(doc, code, font_size=9):
+    """Code block: monospace (Consolas) lines with light-gray paragraph shading.
+
+    Args:
+        code: source code string; each line becomes one paragraph.
+        font_size: code font size in pt (default 9).
+    """
+    for line in code.split("\n"):
+        p = doc.add_paragraph()
+        pf = p.paragraph_format
+        pf.first_line_indent = Pt(0)
+        pf.left_indent = Pt(18)
+        pf.line_spacing = 1.15
+        pf.space_before = Pt(0)
+        pf.space_after = Pt(0)
+        shd = OxmlElement('w:shd')
+        shd.set(qn('w:val'), 'clear')
+        shd.set(qn('w:color'), 'auto')
+        shd.set(qn('w:fill'), 'F2F2F2')
+        p._p.get_or_add_pPr().append(shd)
+        run = p.add_run(line if line.strip() else " ")
+        run.font.name = 'Consolas'
+        run.font.size = Pt(font_size)
+        rfonts = run._element.get_or_add_rPr().get_or_add_rFonts()
+        rfonts.set(qn('w:eastAsia'), '宋体')
+    return doc
+
+
+def add_data_table(doc, headers, rows, col_widths, font_size=9.5):
+    """Data table with gray (D9D9D9) header row and fixed column widths.
+
+    Header row: 黑体 bold, centered. Data rows: 宋体, centered except the
+    last column (left-aligned, typically the description column).
+
+    Args:
+        headers: list of header strings.
+        rows: list of row lists (same length as headers).
+        col_widths: column widths in cm, same length as headers.
+        font_size: cell font size in pt (default 9.5).
+    """
+    table = doc.add_table(rows=1 + len(rows), cols=len(headers))
+    table.alignment = WD_TABLE_ALIGNMENT.CENTER
+    table.style = 'Table Grid'
+    set_table_border(table)
+    _set_table_fixed_layout(table)
+    for i, w in enumerate(col_widths):
+        table.columns[i].width = Cm(w)
+    # Header
+    for j, h in enumerate(headers):
+        cell = table.cell(0, j)
+        cell.width = Cm(col_widths[j])
+        cell.vertical_alignment = WD_ALIGN_VERTICAL.CENTER
+        set_cell_shading(cell, 'D9D9D9')
+        _set_cell_margins(cell, 60)
+        p = cell.paragraphs[0]
+        p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+        p.paragraph_format.first_line_indent = Pt(0)
+        set_run_font(p.add_run(h), '黑体', font_size, bold=True)
+    # Data rows
+    for i, row in enumerate(rows):
+        for j, val in enumerate(row):
+            cell = table.cell(i + 1, j)
+            cell.width = Cm(col_widths[j])
+            cell.vertical_alignment = WD_ALIGN_VERTICAL.CENTER
+            _set_cell_margins(cell, 60)
+            p = cell.paragraphs[0]
+            p.alignment = (WD_ALIGN_PARAGRAPH.CENTER if j < len(row) - 1
+                           else WD_ALIGN_PARAGRAPH.LEFT)
+            p.paragraph_format.first_line_indent = Pt(0)
+            set_run_font(p.add_run(str(val)), '宋体', font_size, bold=False)
+    return table
+
+
+def add_math_to_cell(cell, omml_xml):
+    """Insert an inline OMML formula (mathHelpers.inlineMath) into a table
+    cell, centered. The cell's first paragraph is used."""
+    p = cell.paragraphs[0]
+    p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    p.paragraph_format.first_line_indent = Pt(0)
+    _insert_omml(p, omml_xml)
+    return p
+
+
+# ============================================================
 # TABLE HELPERS
 # ============================================================
 

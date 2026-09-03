@@ -134,7 +134,28 @@ add_h1(doc, "一、概述")
 add_body(doc, "正文内容...")
 ```
 
-### 6. 文档验证
+### 6. 代码块 / 数据表 / 单元格公式
+
+三个扩展辅助函数（位于 `build_docx.py`）：
+
+- **`add_code_block(doc, code, font_size=9)`** — 代码块：Consolas 等宽字体、浅灰底纹（F2F2F2）、逐行段落、左缩进
+- **`add_data_table(doc, headers, rows, col_widths, font_size=9.5)`** — 数据表：灰色表头（D9D9D9 黑体加粗居中）、固定列宽，数据行末列左对齐（描述列）其余居中
+- **`add_math_to_cell(cell, omml_xml)`** — 向表格单元格插入行内 OMML 公式（居中），用于"函数调用 vs 渲染效果"对照表等场景
+
+```python
+add_code_block(doc, "python validate_docx.py output.docx --verbose")
+
+add_table_caption(doc, "排版标准")
+add_data_table(doc, ["元素", "字体", "字号"],
+    [("文档标题", "黑体", "16pt"), ("正文", "宋体", "12pt")],
+    col_widths=[2.2, 1.8, 1.8])
+
+from mathHelpers import sub, inlineMath
+table = add_data_table(doc, ["元素", "调用", "效果"], rows=[...], col_widths=[2.0, 6.0, 5.0])
+add_math_to_cell(table.cell(1, 2), inlineMath([sub("y", "pred")]))
+```
+
+### 7. 文档验证
 
 纯 Python 标准库实现的轻量验证工具，无外部依赖，执行 5 项结构检查：
 
@@ -150,7 +171,7 @@ add_body(doc, "正文内容...")
 python validate_docx.py output.docx --verbose
 ```
 
-### 7. 安全处理规范
+### 8. 安全处理规范
 
 `safe_extract()` 函数在解压 .docx 时防止路径遍历和符号链接攻击，`rezip()` 确保重新打包的文件符合 OOXML 规范（`[Content_Types].xml` 首位存储 + 原子写入）。
 
