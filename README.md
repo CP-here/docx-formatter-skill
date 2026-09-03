@@ -1,4 +1,4 @@
-# Word文档一键排版 Skill：docx-formatter
+# 中文Word文档一键排版 Skill：docx-formatter
 
 生成专业排版的 Word (.docx) 文档，支持 OMML 数学公式、引用上标、表格框图流程图、自动编号和文档验证。
 
@@ -6,40 +6,40 @@
 
 本项目包含一个 Skill：**docx-formatter**。核心功能为文档生成与轻量验证；PDF 渲染验证、XSD 模式验证、编辑现有文档、追踪修订和批注作为可选功能内置，**默认跳过**，仅当用户明确要求时启用。
 
-Skill 采用**双引擎架构**：
+Skill 采用**单引擎架构**（Python only）：
 
-- **引擎 A（Python + python-docx）**：文本、表格、流程图，始终需要
+- **Python 3.8+ 与 python-docx**：全部功能，包括文本、表格、流程图和 OMML 数学公式
 
-- **引擎 B（Node.js + docx 库 v8.5.0+）**：OMML 数学公式，按需启用
+- 数学公式由 `mathHelpers.py` 直接生成 OMML XML（Office Math Markup Language），无需 Node.js 或其他任何外部依赖
 
 ## 核心特性
 
-### 1. OMML 数学公式（引擎 B）
+### 1. OMML 数学公式
 
-通过 `mathHelpers.js` 构建 Office 原生数学元素，Word 中可二次编辑，非图片或纯文本。
+通过 `mathHelpers.py` 构建 Office 原生数学元素（直接生成 OMML XML），Word 中可二次编辑，非图片或纯文本。
 
-**解决的问题**：`MathSum` 使用空 `superScript: []` 会渲染不可见上标框导致文件损坏，本项目改用 `MathSubScript` + Unicode ∑ 彻底规避。
+**解决的问题**：n 元运算符（`m:nary`）使用空上标会渲染不可见上标框导致文件损坏，本项目改用 `m:sSub` + Unicode ∑ 彻底规避。
 
-```javascript
-const { r, sub, sup, frac, sumOp, func, math, inlineMath } = require("./mathHelpers");
+```python
+from mathHelpers import r, sub, sup, frac, sumOp, func, math, inlineMath
 
-// 下标：y_pred
+# 下标：y_pred
 sub("y", "pred")
 
-// 上标：x³
+# 上标：x³
 sup("x", "3")
 
-// 分式：η/N
+# 分式：η/N
 frac([r("\u03b7")], [r("N")])
 
-// 求和：Σ_k a_k（安全写法，无空上标）
+# 求和：Σ_k a_k（安全写法，无空上标）
 sumOp([r("k")], [sub("a", "k")])
 
-// 块级公式（居中，独立行）
+# 块级公式（居中，独立行）
 math([r("f(t) = "), frac([sub("a", "0")], [r("2")]), r(" + "),
   sumOp([r("k")], [sub("a", "k"), func("cos", [r("k"), r("\u03c9t")])])])
 
-// 行内公式（与文本混排在段落中）
+# 行内公式（与文本混排在段落中）
 inlineMath([sub("a", "k")])
 ```
 
@@ -47,23 +47,17 @@ inlineMath([sub("a", "k")])
 
 > f(t) = a₀/2 + Σ\_k a\_k cos(kωt)
 
-### 2. 引用上标（双引擎）
+### 2. 引用上标
 
 正文中的参考文献引用标记 `[1]`、`[1,2]`、`[1-3]` 自动渲染为上标，无需手动处理。
 
 ```python
-# Python
 add_body(doc, "该方法在实验中表现出色[1]。后续研究[2,3]进一步验证了这一结论。")
-```
-
-```javascript
-// Node.js
-para("该方法在实验中表现出色[1]。后续研究[2,3]进一步验证了这一结论。")
 ```
 
 渲染效果：正文中的 `[1]` 和 `[2,3]` 显示为上标字符。
 
-### 3. 表格框图流程图（双引擎）
+### 3. 表格框图流程图
 
 使用 Word 表格 + Unicode 箭头绘制流程图，不依赖图片或 emoji。支持单框、多行框、并排框、横向箭头行和虚线分隔符。
 
@@ -76,7 +70,7 @@ para("该方法在实验中表现出色[1]。后续研究[2,3]进一步验证了
 - **可选底纹**：左右地位相等时全白，层级不同时左灰右白
 
 ```python
-# Python：前两步全白，后两步左灰右白
+# 前两步全白，后两步左灰右白
 add_arrow_row(doc, "① 时域采样", "离散信号 x(n)")
 add_arrow_down(doc)
 add_arrow_row(doc, "② 加窗处理", "加窗信号")
@@ -89,22 +83,6 @@ add_separator_note(doc, "----- 信号预处理止于此处，后续由分类器�
 add_arrow_down(doc)
 add_box(doc, "分类决策：特征归一化 / 模式匹配 / 结果输出 / 置信度评估")
 add_fig_caption(doc, "信号处理与分类流程图")
-```
-
-```javascript
-// Node.js
-children.push(arrowRow("① 时域采样", "离散信号 x(n)"));
-children.push(arrowDown());
-children.push(arrowRow("② 加窗处理", "加窗信号"));
-children.push(arrowDown());
-children.push(arrowRow("③ 离散傅里叶变换", "频谱 X(k)", { leftShade: "D9D9D9" }));
-children.push(arrowDown());
-children.push(arrowRow("④ 频谱分析", "特征向量", { leftShade: "D9D9D9" }));
-children.push(arrowDown());
-children.push(separatorNote("----- 信号预处理止于此处，后续由分类器承接 -----"));
-children.push(arrowDown());
-children.push(box("分类决策：特征归一化 / 模式匹配 / 结果输出 / 置信度评估"));
-children.push(figCaption("信号处理与分类流程图"));
 ```
 
 渲染效果（Word 表格形式）：
@@ -133,7 +111,7 @@ children.push(figCaption("信号处理与分类流程图"));
           图1 信号处理与分类流程图
 ```
 
-### 4. 图表自动编号（双引擎）
+### 4. 图表自动编号
 
 图标题和表标题自动递增编号（图1, 图2... / 表1, 表2...），计数器在文档初始化时自动重置。
 
@@ -156,7 +134,7 @@ add_h1(doc, "一、概述")
 add_body(doc, "正文内容...")
 ```
 
-### 6. 文档验证（docx-formatter 起）
+### 6. 文档验证
 
 纯 Python 标准库实现的轻量验证工具，无外部依赖，执行 5 项结构检查：
 
@@ -199,10 +177,9 @@ docx-formatter/                    # 仓库根（= skill 目录）
 ├── README.md                      # 项目说明
 ├── LICENSE
 └── scripts/
-    ├── build_docx.js            # Node.js 文档构建模板（含 OMML 数学公式）
-    ├── build_docx.py            # Python 文档构建模板（文本 + 图表 + safe_extract/rezip）
-    ├── mathHelpers.js           # OMML 数学元素构建器
-    ├── formulas.js              # 公式定义模板
+    ├── build_docx.py            # Python 文档构建模板（排版 + 公式插入 + safe_extract/rezip）
+    ├── mathHelpers.py           # OMML 数学元素构建器（纯 stdlib，直接生成 OMML XML）
+    ├── formulas.py              # 公式定义模板
     ├── validate_docx.py         # 轻量验证脚本（纯 stdlib，无外部依赖）
     └── optional/                # ★ 可选功能脚本（默认跳过，按需使用）
         ├── merge_runs.py        # 合并碎片 run（编辑现有文档前置步骤）
@@ -219,17 +196,11 @@ docx-formatter/                    # 仓库根（= skill 目录）
 
 ## 环境要求
 
-### 必需（引擎 A：Python）
+### 必需
 
 - Python 3.8+
 
 - python-docx (`pip install python-docx`)
-
-### 按需（引擎 B：Node.js，数学公式时需要）
-
-- Node.js 18+
-
-- docx 库 v8.5.0+ (`npm install docx`)
 
 ### 可选（仅可选功能需要，默认不安装）
 
@@ -273,16 +244,15 @@ docx-formatter/                    # 仓库根（= skill 目录）
 
 可选功能需明确要求，例如 "把这个 docx 转成 PDF 让我看看效果"、"对这份合同添加批注"、"用追踪修订的方式修改这个文档"。
 
-Agent 会根据 `SKILL.md` 中的触发条件自动选择合适的引擎和函数。
+Agent 会根据 `SKILL.md` 中的触发条件自动选择合适的函数。
 
 ## 完整样例
 
 以下样例展示一个包含公式、引用上标、流程图和目录的完整文档生成过程：
 
-**Python（引擎 A）：**
-
 ```python
 from build_docx import *
+from mathHelpers import r, sub, frac, sumOp, func, math
 
 doc = setup_document()
 add_title(doc, "实验报告")
@@ -294,7 +264,19 @@ add_body(doc, "本实验旨在验证傅里叶分析方法的有效性。如文�
 add_h1(doc, "二、方法")
 add_h2(doc, "2.1 傅里叶级数定义")
 add_body(doc, "周期信号的傅里叶级数展开定义为")
-# 注意：数学公式需要引擎 B（Node.js）
+
+# 块级公式：f(t) = a₀/2 + Σ_k a_k cos(kωt)
+add_eq_para(doc, math([
+  r("f(t) = "), frac([sub("a", "0")], [r("2")]), r(" + "),
+  sumOp([r("k")], [sub("a", "k"), func("cos", [r("k"), r("\u03c9t")])])
+]))
+
+# 行内公式混排
+add_body_with_math(doc, [
+    ("text", "其中，"),
+    ("math", inlineMath([sub("a", "k")])),
+    ("text", "为傅里叶系数。"),
+])
 
 add_h1(doc, "三、实验流程")
 add_arrow_row(doc, "① 时域采样", "离散信号 x(n)")
@@ -310,65 +292,27 @@ add_fig_caption(doc, "信号处理流程图")
 doc.save("report.docx")
 ```
 
-**Node.js（引擎 B，含数学公式）：**
-
-```javascript
-const { title, h1, h2, para, eqPara, arrowRow, arrowDown,
-        box, figCaption, separatorNote, toc, pageBreak } = require("./build_docx");
-const { sub, sup, frac, sumOp, func, math, r } = require("./mathHelpers");
-
-children.push(title("实验报告"));
-children.push(...toc());
-
-children.push(h1("一、实验目的"));
-children.push(para("本实验旨在验证傅里叶分析方法的有效性。如文献[1]所述，**傅里叶分析**在多种信号处理任务中表现优异。后续研究[2,3]进一步扩展了其应用范围。"));
-
-children.push(h1("二、方法"));
-children.push(h2("2.1 傅里叶级数定义"));
-children.push(para("周期信号的傅里叶级数展开定义为："));
-// 块级公式：f(t) = a₀/2 + Σ_k a_k cos(kωt)
-children.push(eqPara(math([
-  r("f(t) = "), frac([sub("a", "0")], [r("2")]), r(" + "),
-  sumOp([r("k")], [sub("a", "k"), func("cos", [r("k"), r("\u03c9t")])])
-])));
-// 块级公式：DFT X(k) = Σ_n x(n)·e^{-j2πkn/N}
-children.push(eqPara(math([
-  r("X(k) = "),
-  sumOp([r("n")], [
-    r("x(n) \u00b7 "),
-    sup(r("e"), r("\u2212j2\u03c0kn/N")),
-  ]),
-])));
-
-children.push(h1("三、实验流程"));
-children.push(arrowRow("① 时域采样", "离散信号 x(n)"));
-children.push(arrowDown());
-children.push(arrowRow("② 加窗处理", "加窗信号", { leftShade: "D9D9D9" }));
-children.push(arrowDown());
-children.push(arrowRow("③ 离散傅里叶变换", "频谱 X(k)", { leftShade: "D9D9D9" }));
-children.push(separatorNote("----- 预处理止于此处 -----"));
-children.push(arrowDown());
-children.push(box("频谱分析：峰值检测 / 频带能量 / 谱质心提取"));
-children.push(figCaption("信号处理流程图"));
-```
-
 ## 技术亮点
 
 ### 求和符号安全渲染
 
-`MathSum` 使用空 `superScript: []` 会在 Word 中渲染一个不可见的上标框，导致文件看起来损坏。本项目改用 `MathSubScript` 配合 Unicode ∑（U+2211），彻底规避此问题。
+n 元运算符（`m:nary`）使用空上标会在 Word 中渲染一个不可见的上标框，导致文件看起来损坏。本项目改用下标结构（`m:sSub`）配合 Unicode ∑（U+2211），彻底规避此问题。
 
-```javascript
-// 错误 — 渲染空上标，可能导致文件损坏
-new MathSum({ subScript: [r("i")], superScript: [], children: [...] })
+```python
+# 错误 — m:nary 空上标渲染不可见占位框，可能导致文件损坏
+"<m:nary>...<m:sup></m:sup>...</m:nary>"
 
-// 正确 — 无上标，干净渲染
-new MathSubScript({ children: [r("∑")], subScript: [r("i")] })
+# 正确 — sumOp() 内部实现，无上标，干净渲染
+"<m:sSub><m:e><m:r><m:t>∑</m:t></m:r></m:e><m:sub>...</m:sub></m:sSub>"
 ```
 
-### 数组展平防 XML 损坏
+### 列表展平防 XML 损坏
 
-`sumOp()` 返回数组 `[sumSymbol, ...body]`，如果不展平，嵌套数组会导致 XML 损坏，.docx 文件无法打开。所有接收 children 的函数均通过 `flat()` 处理。
+`sumOp()` 返回列表 `[sum_symbol, *body]`，如果不展平，嵌套列表会导致 XML 拼接错误，.docx 文件无法打开。所有接收 children 的函数均通过 `_flat()` 处理。
+
+### 无依赖 OMML 生成
+
+`mathHelpers.py` 不依赖任何数学库，直接拼接 OMML XML 字符串并经 python-docx 的 `parse_xml()` 插入段落。相比封装库方案，能力上限更高（OMML 规范中的任何元素都可手写构建），且不受第三方库 API 版本变化影响。
 
 ### 横向箭头行融合边框
 

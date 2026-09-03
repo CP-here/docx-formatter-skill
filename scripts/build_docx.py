@@ -171,6 +171,74 @@ def _add_runs_with_formatting(p, text):
 
 
 # ============================================================
+# OMML MATH HELPERS — formulas via mathHelpers.py
+# ============================================================
+
+_M_NS_DECL = 'xmlns:m="http://schemas.openxmlformats.org/officeDocument/2006/math"'
+
+
+def _insert_omml(p, omml_xml):
+    """Parse an OMML XML string (from mathHelpers) and append it to paragraph p.
+
+    mathHelpers.py is imported lazily so build_docx.py stays standalone
+    (copyable without mathHelpers.py) for math-free documents.
+    """
+    from docx.oxml import parse_xml  # noqa: local import, same package as OxmlElement
+    if "xmlns:m=" not in omml_xml:
+        omml_xml = omml_xml.replace("<m:oMath>", "<m:oMath %s>" % _M_NS_DECL, 1)
+    p._p.append(parse_xml(omml_xml))
+
+
+def add_eq_para(doc, math_xml):
+    """Centered block math formula paragraph.
+
+    Args:
+        math_xml: OMML XML string from mathHelpers.math(), e.g.
+            from mathHelpers import r, sub, sumOp, func, math
+            eq = math([sub("L", "LLM"), r(" = - "),
+                       sumOp([r("i")], [sub("y", "i")])])
+            add_eq_para(doc, eq)
+    """
+    p = doc.add_paragraph()
+    p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    pf = p.paragraph_format
+    pf.line_spacing = 1.5
+    pf.first_line_indent = Pt(0)
+    pf.space_before = Pt(6)
+    pf.space_after = Pt(6)
+    _insert_omml(p, math_xml)
+    return p
+
+
+def add_body_with_math(doc, parts):
+    """Body paragraph mixing text and inline math (行内公式与正文混排).
+
+    Args:
+        parts: list of ("text", str) or ("math", omml_xml) tuples, in order.
+            Text parts support **bold** and [n] citation superscripts.
+
+    Example:
+        from mathHelpers import sub, inlineMath
+        add_body_with_math(doc, [
+            ("text", "其中，"),
+            ("math", inlineMath([sub("L", "LLM")])),
+            ("text", "为语言模型损失项。"),
+        ])
+    """
+    p = doc.add_paragraph()
+    p.alignment = WD_ALIGN_PARAGRAPH.JUSTIFY
+    pf = p.paragraph_format
+    pf.line_spacing = 1.5
+    pf.first_line_indent = Pt(24)
+    for kind, val in parts:
+        if kind == "math":
+            _insert_omml(p, val)
+        else:
+            _add_runs_with_formatting(p, val)
+    return p
+
+
+# ============================================================
 # TABLE HELPERS
 # ============================================================
 
