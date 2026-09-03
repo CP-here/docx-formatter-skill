@@ -1,8 +1,7 @@
-***
-
+---
 name: docx-formatter
 description: 生成专业排版的中文 Word (.docx) 文档，支持 OMML 数学公式、表格框图、标准排版、引用上标和轻量完整性验证。当用户要求生成带公式的 Word 文档、用数学方程格式化文档、在 Word 中创建流程图样式图表、将参考文献引用渲染为上标、或排版/格式化文档为 Word 时调用。
--------------------------------------------------------------------------------------------------------------------------------------------------------------
+---
 
 # 中文 DOCX 排版工具
 
@@ -149,9 +148,9 @@ skill 根目录（SKILL.md 所在目录）/
 | `add_item_para(doc, label, text)`                                                                   | 加粗标签 + 正文，首行缩进。正文支持 `**bold**` 和 `[n]` 引用上标                                               |
 | `add_eq_para(doc, math_xml)`                                                                        | 居中块级公式段落（接收 mathHelpers 的 OMML XML 字符串）                                                   |
 | `add_body_with_math(doc, parts)`                                                                    | 正文与行内公式混排段落（parts 为 `("text", str)` / `("math", xml)` 列表）                                 |
-| `add_code_block(doc, code, font_size)`                                                              | 代码块：Consolas 等宽字体（默认9pt），浅灰底纹（F2F2F2），逐行段落，左缩进                                       |
-| `add_data_table(doc, headers, rows, col_widths, font_size)`                                         | 数据表：灰色表头（D9D9D9 黑体加粗居中），数据行宋体，末列左对齐其余居中，固定列宽                                  |
-| `add_math_to_cell(cell, omml_xml)`                                                                  | 向表格单元格插入行内 OMML 公式（居中），配合 `inlineMath()` 用于公式对照表等场景                            |
+| `add_code_block(doc, code, font_size)`                                                              | 代码块：Consolas 等宽字体（默认9pt），浅灰底纹（F2F2F2），逐行段落，左缩进                                            |
+| `add_data_table(doc, headers, rows, col_widths, font_size)`                                         | 数据表：灰色表头（D9D9D9 黑体加粗居中），数据行宋体，末列左对齐其余居中，固定列宽                                              |
+| `add_math_to_cell(cell, omml_xml)`                                                                  | 向表格单元格插入行内 OMML 公式（居中），配合 `inlineMath()` 用于公式对照表等场景                                       |
 | `add_box(doc, text, width_cm, font_size)`                                                           | 单个居中框，用于流程图（默认宽度14cm，含单元格边距）                                                              |
 | `add_multi_line_box(doc, lines, width_cm, font_size)`                                               | 多行居中框，用于流程图（一个框内多行文字）                                                                     |
 | `add_multi_col_table(doc, cells, col_width_cm, font_size)`                                          | 并排框行（默认总宽14cm，含单元格边距）                                                                     |
@@ -172,25 +171,25 @@ skill 根目录（SKILL.md 所在目录）/
 
 生成文档时，请根据结构元素选择正确的函数：
 
-| 场景              | 示例                      | Python 函数                               | 格式                       | 进入目录              |
-| --------------- | ----------------------- | --------------------------------------- | ------------------------ | ----------------- |
-| 文档主标题           | `技术交底书`                 | `add_title(doc, text)`                  | 黑体 16pt, 居中, 加粗          | 否                 |
-| 一级章节（一、二、）      | `一、发明名称`                | `add_h1(doc, text)`                     | 黑体 16pt, 左对齐, 加粗         | **是 (Heading 1)** |
-| 二级编号标题          | `3.1 现有技术...`           | `add_h2(doc, text)`                     | 黑体 12pt, 左对齐, 加粗         | **是 (Heading 2)** |
-| 二级步骤标题          | `步骤1：构建...`             | `add_h2(doc, text)`                     | 黑体 12pt, 左对齐, 加粗         | **是 (Heading 2)** |
-| 二级括号标题          | `（一）系统总体架构`             | `add_h2(doc, text)`                     | 黑体 12pt, 左对齐, 加粗         | **是 (Heading 2)** |
-| 三级标题            | `6.1 xxx方法`             | `add_h3(doc, text)`                     | 黑体 11pt, 左对齐, 加粗         | **是 (Heading 3)** |
-| **编号分点（加粗标签）**  | `（1）定义核心概念...：内容`       | `add_item_para(doc, "（1）定义...：", "内容")` | 宋体 12pt, 加粗标签 + 正文, 首行缩进 | <br />            |
-| **字母子步骤（加粗标签）** | `a. 任务分解：内容`            | `add_item_para(doc, "a. 任务分解：", "内容")`  | 宋体 12pt, 加粗标签 + 正文, 首行缩进 | <br />            |
-| 普通正文段落          | 技术描述段落                  | `add_body(doc, text)`                   | 宋体 12pt, 两端对齐, 缩进2字符     | <br />            |
-| 块级数学公式          | `L = Σ ...`             | `add_eq_para(doc, math([...]))`         | 居中，1.5倍行距                | <br />            |
-| 行内公式混排          | `其中 L_LLM 为...`         | `add_body_with_math(doc, parts)`        | 宋体 12pt, 两端对齐            | <br />            |
-| 代码块             | 命令/源码片段                 | `add_code_block(doc, code)`             | Consolas 9pt, 灰底, 无首行缩进  | <br />            |
-| 数据表             | 参数表 / 检查项表 / 功能矩阵    | `add_data_table(doc, headers, rows, col_widths)` | 灰色表头, 固定列宽        | <br />            |
-| 表格单元格内公式       | 公式对照表第三列              | `add_math_to_cell(cell, inlineMath([...]))` | OMML 居中              | <br />            |
-| 图标题             | `系统架构图` → 自动 "图1 系统架构图" | `add_fig_caption(doc, text)`            | 宋体 10.5pt, 居中, 图下方       | <br />            |
-| 表标题             | `参数对比` → 自动 "表1 参数对比"   | `add_table_caption(doc, text)`          | 宋体 10.5pt, 居中, 表上方       | <br />            |
-| 图注（斜体）          | `（核心：...）`              | `add_note(doc, text)`                   | 宋体 9pt, 居中, 斜体           | <br />            |
+| 场景              | 示例                      | Python 函数                                        | 格式                       | 进入目录              |
+| --------------- | ----------------------- | ------------------------------------------------ | ------------------------ | ----------------- |
+| 文档主标题           | `技术交底书`                 | `add_title(doc, text)`                           | 黑体 16pt, 居中, 加粗          | 否                 |
+| 一级章节（一、二、）      | `一、发明名称`                | `add_h1(doc, text)`                              | 黑体 16pt, 左对齐, 加粗         | **是 (Heading 1)** |
+| 二级编号标题          | `3.1 现有技术...`           | `add_h2(doc, text)`                              | 黑体 12pt, 左对齐, 加粗         | **是 (Heading 2)** |
+| 二级步骤标题          | `步骤1：构建...`             | `add_h2(doc, text)`                              | 黑体 12pt, 左对齐, 加粗         | **是 (Heading 2)** |
+| 二级括号标题          | `（一）系统总体架构`             | `add_h2(doc, text)`                              | 黑体 12pt, 左对齐, 加粗         | **是 (Heading 2)** |
+| 三级标题            | `6.1 xxx方法`             | `add_h3(doc, text)`                              | 黑体 11pt, 左对齐, 加粗         | **是 (Heading 3)** |
+| **编号分点（加粗标签）**  | `（1）定义核心概念...：内容`       | `add_item_para(doc, "（1）定义...：", "内容")`          | 宋体 12pt, 加粗标签 + 正文, 首行缩进 | <br />            |
+| **字母子步骤（加粗标签）** | `a. 任务分解：内容`            | `add_item_para(doc, "a. 任务分解：", "内容")`           | 宋体 12pt, 加粗标签 + 正文, 首行缩进 | <br />            |
+| 普通正文段落          | 技术描述段落                  | `add_body(doc, text)`                            | 宋体 12pt, 两端对齐, 缩进2字符     | <br />            |
+| 块级数学公式          | `L = Σ ...`             | `add_eq_para(doc, math([...]))`                  | 居中，1.5倍行距                | <br />            |
+| 行内公式混排          | `其中 L_LLM 为...`         | `add_body_with_math(doc, parts)`                 | 宋体 12pt, 两端对齐            | <br />            |
+| 代码块             | 命令/源码片段                 | `add_code_block(doc, code)`                      | Consolas 9pt, 灰底, 无首行缩进  | <br />            |
+| 数据表             | 参数表 / 检查项表 / 功能矩阵       | `add_data_table(doc, headers, rows, col_widths)` | 灰色表头, 固定列宽               | <br />            |
+| 表格单元格内公式        | 公式对照表第三列                | `add_math_to_cell(cell, inlineMath([...]))`      | OMML 居中                  | <br />            |
+| 图标题             | `系统架构图` → 自动 "图1 系统架构图" | `add_fig_caption(doc, text)`                     | 宋体 10.5pt, 居中, 图下方       | <br />            |
+| 表标题             | `参数对比` → 自动 "表1 参数对比"   | `add_table_caption(doc, text)`                   | 宋体 10.5pt, 居中, 表上方       | <br />            |
+| 图注（斜体）          | `（核心：...）`              | `add_note(doc, text)`                            | 宋体 9pt, 居中, 斜体           | <br />            |
 
 ### 关键规则
 
@@ -534,7 +533,7 @@ add_eq_para(doc, eq2)   # 交叉熵损失
 
 ## 代码块 / 数据表 / 单元格公式
 
-### 代码块（add_code_block）
+### 代码块（add\_code\_block）
 
 命令行、源码片段等代码内容使用等宽字体 + 浅灰底纹渲染，**不要**将代码放入普通正文段落：
 
@@ -545,7 +544,7 @@ add_code_block(doc, """from build_docx import setup_document
 doc = setup_document()""")
 ```
 
-### 数据表（add_data_table）
+### 数据表（add\_data\_table）
 
 参数表、检查项表、功能矩阵等**数据型表格**使用 `add_data_table`（灰色表头、固定列宽），配合 `add_table_caption` 自动编号；流程图框图仍用 `add_box` / `add_arrow_row` 系列：
 
@@ -562,7 +561,7 @@ add_data_table(doc,
 
 注意：`col_widths` 总宽度建议 ≤ 14.5cm（A4 减去页边距后的版心宽度）；数据行末列左对齐（描述列），其余居中。
 
-### 单元格内公式（add_math_to_cell）
+### 单元格内公式（add\_math\_to\_cell）
 
 在表格单元格中插入行内 OMML 公式（如"函数调用 vs 渲染效果"对照表）：
 
