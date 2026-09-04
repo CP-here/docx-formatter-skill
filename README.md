@@ -1,6 +1,7 @@
 # 中文Word文档一键排版 Skill：docx-formatter
 
-生成专业排版的 Word (.docx) 文档，支持 OMML 数学公式、引用上标、表格框图流程图、自动编号和文档验证。
+生成专业排版的 Word (.docx) 文档，支持目录、 OMML 数学公式、引用上标、流程图绘制、表格图片自动编号和文档验证。
+效果见example.docx
 
 ## 项目简介
 
