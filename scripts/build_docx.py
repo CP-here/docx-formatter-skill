@@ -13,9 +13,13 @@ USAGE:
   4. Run: python build_docx.py
 
 Features:
+  - Typography presets: PRESETS + set_preset('name') whole-set switching —
+    headings/body fonts & spacing, 中西文字体分离 (west fonts), caption/note
+    sizes, page margins, TOC styles
   - 黑体三号(16pt) Title centered, H1/H2/H3 left-aligned
   - 宋体小四(12pt) body, first-line indent 2 chars, 1.5 line spacing
   - Table-box diagrams: add_box(), add_multi_line_box(), add_multi_col_table(), add_arrow_down()
+  - Layered architecture diagrams: add_layered_architecture(doc, layers)
   - Cell margins (tcMar) for all table-box elements
   - Figure notes: add_note() for italic annotations below figures
   - Table Grid style with header shading (D9D9D9, gray)
@@ -35,12 +39,101 @@ import zipfile
 
 
 # ============================================================
+# TYPOGRAPHY PRESETS — 排版参数集中定义（嵌套分组）
+# ============================================================
+# 覆盖分组：
+#   - west        中西文字体分离（开关 + 西文正文/标题字体）
+#   - title~h3    标题字体/字号/加粗/颜色/行距/段前后
+#   - body/item   正文与分点段落（字体/字号/行距/缩进/段前后；None=不设置）
+#   - caption/note 图表标题与图注字号
+#   - page        页边距 + 页眉/页脚距离
+#   - toc         目录标题/条目样式与固定行距
+# 不覆盖：代码块、数据表、框图、箭头、公式段（保持函数内硬编码）。
+# 切换方式：set_preset('name') 整套切换；须在 setup_document() 之前调用
+#           （页面边距与 Normal 默认字体在 setup_document() 时读取预设）。
+# 新增预设：向 PRESETS 添加一份同键结构的嵌套字典即可。
+
+PRESETS = {
+    'default': {
+        'west': {
+            'separate': False,           # 中西文分离开关（默认关闭，保持原行为）
+            'body': 'Times New Roman',    # 西文正文字体（分离开启时生效）
+            'head': 'Times New Roman',    # 西文标题字体（分离开启时生效）
+        },
+        'title': {'font': '黑体', 'size': 16, 'bold': True, 'color': None,
+                  'line_spacing': 1.5, 'space_before': 12, 'space_after': 12},
+        'h1':    {'font': '黑体', 'size': 16, 'bold': True, 'color': (0, 0, 0),
+                  'line_spacing': 1.5, 'space_before': 10, 'space_after': 24},
+        'h2':    {'font': '黑体', 'size': 12, 'bold': True, 'color': (0, 0, 0),
+                  'line_spacing': 1.5, 'space_before': 18, 'space_after': 12},
+        'h3':    {'font': '黑体', 'size': 11, 'bold': True, 'color': (0, 0, 0),
+                  'line_spacing': 1.5, 'space_before': 14, 'space_after': 8},
+        'body':  {'font': '宋体', 'size': 12, 'line_spacing': 1.5,
+                  'first_line_indent': 24,
+                  # None = 不设置，沿用样式继承（原实现正文不另设段间距）
+                  'space_before': None, 'space_after': None},
+        'item':  {'space_before': None, 'space_after': 7},
+        'caption': {'size': 10.5},   # 图/表标题字号
+        'note':  {'size': 9},         # 图注字号（斜体小字）
+        'page': {
+            'margin_top': 2.54, 'margin_bottom': 2.54,
+            'margin_left': 2.54, 'margin_right': 2.54,
+            'header_distance': 1.27, 'footer_distance': 1.27,
+        },
+        'toc': {
+            'title_font': '黑体', 'title_size': 16,
+            'toc1_font': '黑体', 'toc1_size': 14,
+            'toc2_font': '宋体', 'toc2_size': 12,
+            'line_spacing': 22,      # 目录固定行距（pt）
+        },
+    },
+}
+
+_ACTIVE_PRESET = PRESETS['default']
+
+
+def set_preset(name):
+    """Switch the active typography preset (whole-set switching).
+
+    Args:
+        name: key in PRESETS, e.g. set_preset('default').
+    Raises:
+        KeyError: if the preset name is unknown.
+
+    Note: call BEFORE setup_document() — page margins and the Normal
+    default font are read from the preset when setup_document() runs.
+    """
+    global _ACTIVE_PRESET
+    if name not in PRESETS:
+        raise KeyError(f"unknown preset: {name!r} (available: {', '.join(PRESETS)})")
+    _ACTIVE_PRESET = PRESETS[name]
+
+
+def _west_font(kind):
+    """Western font for 'body'/'head' when 中西文分离 is enabled, else None."""
+    w = _ACTIVE_PRESET.get('west')
+    if w and w.get('separate'):
+        return w.get(kind)
+    return None
+
+
+def _preset_color(rgb_tuple):
+    """Convert a preset (r, g, b) tuple to RGBColor, or None."""
+    return RGBColor(*rgb_tuple) if rgb_tuple else None
+
+
+# ============================================================
 # FONT & STYLE HELPERS
 # ============================================================
 
-def set_run_font(run, font_name, size, bold=False, color=None):
-    """Set font name, size, bold for a run, including East Asian font."""
-    run.font.name = font_name
+def set_run_font(run, font_name, size, bold=False, color=None, west_font=None):
+    """Set font name, size, bold for a run, including East Asian font.
+
+    west_font: optional Western font for ascii/hAnsi. When given, Western
+    characters render in west_font while East Asian characters keep
+    font_name (中西文分离).
+    """
+    run.font.name = west_font if west_font else font_name
     run.font.size = Pt(size)
     run.font.bold = bold
     if color:
@@ -52,79 +145,97 @@ def set_run_font(run, font_name, size, bold=False, color=None):
 
 
 def add_title(doc, text):
-    """Document title: 黑体 三号(16pt) 居中 加粗 (for document main title only).
-    Line spacing: 1.5x (aligned with NJUThesis linespread=1.625).
+    """Document title (for document main title only), centered, preset-driven.
+    Default preset: 黑体 三号(16pt) 居中 加粗, 1.5x line spacing,
+    space before/after 12pt (aligned with NJUThesis linespread=1.625).
     """
+    s = _ACTIVE_PRESET['title']
     p = doc.add_paragraph()
     p.alignment = WD_ALIGN_PARAGRAPH.CENTER
     p.paragraph_format.first_line_indent = Pt(0)
-    p.paragraph_format.line_spacing = 1.5
-    p.paragraph_format.space_before = Pt(12)
-    p.paragraph_format.space_after = Pt(12)
+    p.paragraph_format.line_spacing = s['line_spacing']
+    p.paragraph_format.space_before = Pt(s['space_before'])
+    p.paragraph_format.space_after = Pt(s['space_after'])
     run = p.add_run(text)
-    set_run_font(run, '黑体', 16, bold=True)
+    set_run_font(run, s['font'], s['size'], bold=s['bold'],
+                 color=_preset_color(s['color']), west_font=_west_font('head'))
 
 
 def add_h1(doc, text):
-    """H1: 黑体 三号(16pt) 左对齐 加粗 黑色 (for section headings).
+    """H1 (section heading), left-aligned, preset-driven.
     Uses Word built-in Heading 1 style for TOC compatibility.
-    Spacing: before=10pt, after=24pt, line=1.5x (NJUThesis chapter, after reduced for Word).
+    Default preset: 黑体 16pt bold black, 1.5x, before=10pt, after=24pt
+    (NJUThesis chapter, after reduced for Word).
     """
+    s = _ACTIVE_PRESET['h1']
     p = doc.add_paragraph()
     p.style = doc.styles['Heading 1']
     p.alignment = WD_ALIGN_PARAGRAPH.LEFT
     p.paragraph_format.first_line_indent = Pt(0)
-    p.paragraph_format.line_spacing = 1.5
-    p.paragraph_format.space_before = Pt(10)
-    p.paragraph_format.space_after = Pt(24)
+    p.paragraph_format.line_spacing = s['line_spacing']
+    p.paragraph_format.space_before = Pt(s['space_before'])
+    p.paragraph_format.space_after = Pt(s['space_after'])
     run = p.add_run(text)
-    set_run_font(run, '黑体', 16, bold=True, color=RGBColor(0, 0, 0))
+    set_run_font(run, s['font'], s['size'], bold=s['bold'],
+                 color=_preset_color(s['color']), west_font=_west_font('head'))
 
 
 def add_h2(doc, text):
-    """H2: 黑体 小四(12pt) 左对齐 加粗 黑色.
+    """H2, left-aligned, preset-driven.
     Uses Word built-in Heading 2 style for TOC compatibility.
-    Spacing: before=18pt, after=12pt, line=1.5x (aligned with NJUThesis section).
+    Default preset: 黑体 12pt bold black, 1.5x, before=18pt, after=12pt
+    (aligned with NJUThesis section).
     """
+    s = _ACTIVE_PRESET['h2']
     p = doc.add_paragraph()
     p.style = doc.styles['Heading 2']
     p.alignment = WD_ALIGN_PARAGRAPH.LEFT
     p.paragraph_format.first_line_indent = Pt(0)
-    p.paragraph_format.line_spacing = 1.5
-    p.paragraph_format.space_before = Pt(18)
-    p.paragraph_format.space_after = Pt(12)
+    p.paragraph_format.line_spacing = s['line_spacing']
+    p.paragraph_format.space_before = Pt(s['space_before'])
+    p.paragraph_format.space_after = Pt(s['space_after'])
     run = p.add_run(text)
-    set_run_font(run, '黑体', 12, bold=True, color=RGBColor(0, 0, 0))
+    set_run_font(run, s['font'], s['size'], bold=s['bold'],
+                 color=_preset_color(s['color']), west_font=_west_font('head'))
 
 
 def add_h3(doc, text):
-    """H3: 黑体 11pt 左对齐 加粗 黑色.
+    """H3, left-aligned, preset-driven.
     Uses Word built-in Heading 3 style for TOC compatibility.
-    Spacing: before=14pt, after=8pt, line=1.5x (aligned with NJUThesis subsection).
+    Default preset: 黑体 11pt bold black, 1.5x, before=14pt, after=8pt
+    (aligned with NJUThesis subsection).
     """
+    s = _ACTIVE_PRESET['h3']
     p = doc.add_paragraph()
     p.style = doc.styles['Heading 3']
     p.alignment = WD_ALIGN_PARAGRAPH.LEFT
     p.paragraph_format.first_line_indent = Pt(0)
-    p.paragraph_format.line_spacing = 1.5
-    p.paragraph_format.space_before = Pt(14)
-    p.paragraph_format.space_after = Pt(8)
+    p.paragraph_format.line_spacing = s['line_spacing']
+    p.paragraph_format.space_before = Pt(s['space_before'])
+    p.paragraph_format.space_after = Pt(s['space_after'])
     run = p.add_run(text)
-    set_run_font(run, '黑体', 11, bold=True, color=RGBColor(0, 0, 0))
+    set_run_font(run, s['font'], s['size'], bold=s['bold'],
+                 color=_preset_color(s['color']), west_font=_west_font('head'))
 
 
 def add_body(doc, text):
-    """Body: 宋体 小四(12pt) 两端对齐 首行缩进2字符 1.5倍行距.
+    """Body paragraph, preset-driven (default: 宋体 12pt, justified,
+    first-line indent 2 chars, 1.5x line spacing).
 
     Supports:
       - **bold** segments
       - [n] citation markers → rendered as superscript (e.g. [1], [1,2], [1-3])
     """
+    s = _ACTIVE_PRESET['body']
     p = doc.add_paragraph()
     p.alignment = WD_ALIGN_PARAGRAPH.JUSTIFY
     pf = p.paragraph_format
-    pf.line_spacing = 1.5
-    pf.first_line_indent = Pt(24)
+    pf.line_spacing = s['line_spacing']
+    pf.first_line_indent = Pt(s['first_line_indent'])
+    if s['space_before'] is not None:
+        pf.space_before = Pt(s['space_before'])
+    if s['space_after'] is not None:
+        pf.space_after = Pt(s['space_after'])
     _add_runs_with_formatting(p, text)
 
 
@@ -132,15 +243,21 @@ def add_item_para(doc, label, text):
     """Item paragraph: bold label + normal body, first-line indent.
 
     Body text supports **bold** and [n] citation superscripts.
+    Default preset: body style + space_after 7pt.
     """
+    s = _ACTIVE_PRESET['body']
+    it = _ACTIVE_PRESET['item']
     p = doc.add_paragraph()
     p.alignment = WD_ALIGN_PARAGRAPH.JUSTIFY
     pf = p.paragraph_format
-    pf.line_spacing = 1.5
-    pf.first_line_indent = Pt(24)
-    pf.space_after = Pt(7)
+    pf.line_spacing = s['line_spacing']
+    pf.first_line_indent = Pt(s['first_line_indent'])
+    if it['space_before'] is not None:
+        pf.space_before = Pt(it['space_before'])
+    pf.space_after = Pt(it['space_after'])
     run = p.add_run(label)
-    set_run_font(run, '宋体', 12, bold=True)
+    set_run_font(run, s['font'], s['size'], bold=True,
+                 west_font=_west_font('body'))
     _add_runs_with_formatting(p, text)
 
 
@@ -148,7 +265,9 @@ def _add_runs_with_formatting(p, text):
     """Add runs to paragraph p, parsing **bold** and [n] citation superscripts.
 
     Citation pattern matches: [1], [1,2], [1-3], [1, 2, 3], etc.
+    Fonts read from the active body preset.
     """
+    s = _ACTIVE_PRESET['body']
     # Combined regex: **bold** OR [citation]
     # Citation: [digits, possibly with commas/hyphens/spaces]
     pattern = r'(\*\*.*?\*\*|\[\d[\d,\-\s]*\])'
@@ -159,15 +278,18 @@ def _add_runs_with_formatting(p, text):
         if part.startswith('**') and part.endswith('**'):
             # Bold text
             run = p.add_run(part[2:-2])
-            set_run_font(run, '宋体', 12, bold=True)
+            set_run_font(run, s['font'], s['size'], bold=True,
+                         west_font=_west_font('body'))
         elif re.match(r'^\[\d[\d,\-\s]*\]$', part):
             # Citation marker → superscript
             run = p.add_run(part)
-            set_run_font(run, '宋体', 12, bold=False)
+            set_run_font(run, s['font'], s['size'], bold=False,
+                         west_font=_west_font('body'))
             run.font.superscript = True
         else:
             run = p.add_run(part)
-            set_run_font(run, '宋体', 12, bold=False)
+            set_run_font(run, s['font'], s['size'], bold=False,
+                         west_font=_west_font('body'))
 
 
 # ============================================================
@@ -228,8 +350,13 @@ def add_body_with_math(doc, parts):
     p = doc.add_paragraph()
     p.alignment = WD_ALIGN_PARAGRAPH.JUSTIFY
     pf = p.paragraph_format
-    pf.line_spacing = 1.5
-    pf.first_line_indent = Pt(24)
+    s = _ACTIVE_PRESET['body']
+    pf.line_spacing = s['line_spacing']
+    pf.first_line_indent = Pt(s['first_line_indent'])
+    if s['space_before'] is not None:
+        pf.space_before = Pt(s['space_before'])
+    if s['space_after'] is not None:
+        pf.space_after = Pt(s['space_after'])
     for kind, val in parts:
         if kind == "math":
             _insert_omml(p, val)
@@ -607,6 +734,109 @@ def add_separator_note(doc, text):
 
 
 # ============================================================
+# LAYERED ARCHITECTURE DIAGRAM (table-box based, no connectors)
+# ============================================================
+
+def _add_layer_spacer(doc, size_pt=6):
+    """Small empty paragraph between diagram layers.
+
+    Technically required: without a separating paragraph Word merges two
+    adjacent tables into one.
+    """
+    p = doc.add_paragraph()
+    pf = p.paragraph_format
+    pf.first_line_indent = Pt(0)
+    pf.space_before = Pt(0)
+    pf.space_after = Pt(0)
+    pf.line_spacing = 1.0
+    run = p.add_run('')
+    run.font.size = Pt(size_pt)
+
+
+def _add_arch_box(doc, lines, width_cm, font_size):
+    """Single full-width layer box; lines[0] bold (layer name), rest plain."""
+    table = doc.add_table(rows=1, cols=1)
+    table.alignment = WD_TABLE_ALIGNMENT.CENTER
+    table.style = 'Table Grid'
+    cell = table.cell(0, 0)
+    cell.width = Cm(width_cm)
+    cell.vertical_alignment = WD_ALIGN_VERTICAL.CENTER
+    _set_cell_margins(cell, 80)
+    for i, line in enumerate(lines):
+        p = cell.paragraphs[0] if i == 0 else cell.add_paragraph()
+        p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+        p.paragraph_format.first_line_indent = Pt(0)
+        p.paragraph_format.space_after = Pt(2)
+        set_run_font(p.add_run(line), '宋体', font_size, bold=(i == 0))
+    set_table_border(table)
+    _set_table_fixed_layout(table)
+    return table
+
+
+def _add_arch_parallel(doc, boxes, width_cm, col_widths, font_size):
+    """Row of parallel layer boxes; each box's lines[0] bold (layer name)."""
+    n = len(boxes)
+    table = doc.add_table(rows=1, cols=n)
+    table.alignment = WD_TABLE_ALIGNMENT.CENTER
+    table.style = 'Table Grid'
+    if col_widths is None:
+        col_widths = [width_cm / n] * n
+    for i, lines in enumerate(boxes):
+        cell = table.cell(0, i)
+        cell.width = Cm(col_widths[i])
+        cell.vertical_alignment = WD_ALIGN_VERTICAL.CENTER
+        _set_cell_margins(cell, 60)
+        for k, line in enumerate(lines):
+            p = cell.paragraphs[0] if k == 0 else cell.add_paragraph()
+            p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+            p.paragraph_format.first_line_indent = Pt(0)
+            p.paragraph_format.space_after = Pt(2)
+            set_run_font(p.add_run(line), '宋体', font_size, bold=(k == 0))
+    for i, w in enumerate(col_widths):
+        table.columns[i].width = Cm(w)
+    set_table_border(table)
+    _set_table_fixed_layout(table)
+    return table
+
+
+def add_layered_architecture(doc, layers, width_cm=14, col_widths=None,
+                             font_size=10.5):
+    """Layered architecture diagram built from table boxes (v1: no connectors).
+
+    Each element of `layers` is one diagram layer, in top-to-bottom order.
+    Two forms are accepted:
+
+      - list[str]: full-width box. lines[0] is the bold layer-name line;
+        remaining lines are plain centered content lines.
+      - list[list[str]]: row of parallel boxes. Each inner list is one box
+        (lines[0] bold layer name, rest plain lines).
+
+    A small spacer paragraph is inserted between layers (prevents Word from
+    merging adjacent tables). Connector lines/arrows are intentionally
+    omitted in v1 per design decision.
+
+    Args:
+        layers: list of layers, top to bottom. Example::
+
+            add_layered_architecture(doc, [
+                ["应用层（前端 · B/S）", "菜单栏 / 数据上传 / 参数配置"],
+                [["预处理模块", "高清栅格化"],
+                 ["配置模块", "参数模板库"]],
+                ["数据接入层：上传 → 校验 → 归档"],
+            ], col_widths=[4, 4, 6])
+
+        (a 2-string list is a full-width box; a list of lists is a parallel row)
+    """
+    for idx, layer in enumerate(layers):
+        if idx > 0:
+            _add_layer_spacer(doc)
+        if layer and isinstance(layer[0], (list, tuple)):
+            _add_arch_parallel(doc, layer, width_cm, col_widths, font_size)
+        else:
+            _add_arch_box(doc, layer, width_cm, font_size)
+
+
+# ============================================================
 # FIGURE/TABLE AUTO-NUMBERING
 # ============================================================
 
@@ -640,7 +870,7 @@ def add_fig_caption(doc, text):
         _fig_counter += 1
         caption = f"图{_fig_counter} {text}"
         run = p.add_run(caption)
-        set_run_font(run, '宋体', 10.5, bold=False)
+        set_run_font(run, '宋体', _ACTIVE_PRESET['caption']['size'], bold=False)
 
 
 def add_table_caption(doc, text):
@@ -657,7 +887,7 @@ def add_table_caption(doc, text):
     p.paragraph_format.space_before = Pt(12)
     p.paragraph_format.space_after = Pt(6)
     run = p.add_run(caption)
-    set_run_font(run, '宋体', 10.5, bold=False)
+    set_run_font(run, '宋体', _ACTIVE_PRESET['caption']['size'], bold=False)
 
 
 def add_note(doc, text):
@@ -668,14 +898,15 @@ def add_note(doc, text):
     p.paragraph_format.space_before = Pt(4)
     p.paragraph_format.space_after = Pt(12)
     run = p.add_run(text)
-    set_run_font(run, '宋体', 9, bold=False)
+    set_run_font(run, '宋体', _ACTIVE_PRESET['note']['size'], bold=False)
     run.italic = True
 
 
 def _setup_toc_styles(doc):
     """Pre-define TOC entry styles so Word applies correct formatting when updating the TOC field.
 
-    Format aligned with NJUThesis LaTeX template:
+    Values come from the active preset's 'toc' section. Default preset,
+    aligned with NJUThesis LaTeX template:
     - TOC 1 (一级目录条目): 黑体 四号(14pt) 不加粗, 固定行距22磅
     - TOC 2 (二级目录条目): 宋体 小四(12pt) 不加粗, 固定行距22磅
 
@@ -683,10 +914,11 @@ def _setup_toc_styles(doc):
     styles when updating the TOC field and falls back to the built-in
     template defaults (which bold TOC 2).
     """
+    t = _ACTIVE_PRESET['toc']
     # (level, font_name, size_pt, bold)
     toc_specs = [
-        (1, '黑体', 14, False),
-        (2, '宋体', 12, False),
+        (1, t['toc1_font'], t['toc1_size'], False),
+        (2, t['toc2_font'], t['toc2_size'], False),
     ]
     for level, font_name, size_pt, bold in toc_specs:
         style_name = f'TOC {level}'
@@ -734,9 +966,9 @@ def _setup_toc_styles(doc):
         szcs.set(qn('w:val'), str(size_pt * 2))
         rpr.append(szcs)
 
-        # --- Line spacing: fixed 22pt ---
+        # --- Line spacing: fixed (from preset, in pt) ---
         pf = style.paragraph_format
-        pf.line_spacing = Pt(22)
+        pf.line_spacing = Pt(t['line_spacing'])
 
 
 def add_toc(doc, title='目  录', levels='1-2'):
@@ -762,12 +994,13 @@ def add_toc(doc, title='目  录', levels='1-2'):
     # Page break before TOC
     doc.add_page_break()
 
-    # TOC title
+    # TOC title (font/size from the active preset's 'toc' section)
+    t = _ACTIVE_PRESET['toc']
     p = doc.add_paragraph()
     p.alignment = WD_ALIGN_PARAGRAPH.CENTER
     p.paragraph_format.first_line_indent = Pt(0)
     run = p.add_run(title)
-    set_run_font(run, '黑体', 16, bold=True, color=RGBColor(0, 0, 0))
+    set_run_font(run, t['title_font'], t['title_size'], bold=True, color=RGBColor(0, 0, 0))
 
     # TOC field: TOC \o "1-2" \h \z \u
     paragraph = doc.add_paragraph()
@@ -811,24 +1044,32 @@ def add_toc(doc, title='目  录', levels='1-2'):
 # ============================================================
 
 def setup_document():
-    """Create a Document with standard page setup.
+    """Create a Document with page setup from the active preset.
+
+    Reads the 'page' section (margins, header/footer distance) and the
+    'body' section (Normal default font) of the active preset. Call
+    set_preset() before this function when switching presets.
     Also resets figure/table counters so each document starts from 图1/表1.
     """
     reset_counters()
     doc = Document()
+    pg = _ACTIVE_PRESET['page']
     for section in doc.sections:
-        section.top_margin = Cm(2.54)
-        section.bottom_margin = Cm(2.54)
-        section.left_margin = Cm(2.54)
-        section.right_margin = Cm(2.54)
+        section.top_margin = Cm(pg['margin_top'])
+        section.bottom_margin = Cm(pg['margin_bottom'])
+        section.left_margin = Cm(pg['margin_left'])
+        section.right_margin = Cm(pg['margin_right'])
+        section.header_distance = Cm(pg['header_distance'])
+        section.footer_distance = Cm(pg['footer_distance'])
 
-    # Set default font to 宋体 小四
+    # Set default font from the body preset (west font for ascii when separated)
+    b = _ACTIVE_PRESET['body']
     style = doc.styles['Normal']
-    style.font.name = '宋体'
-    style.font.size = Pt(12)
+    style.font.name = _west_font('body') or b['font']
+    style.font.size = Pt(b['size'])
     rpr = style.element.get_or_add_rPr()
     rfonts = rpr.get_or_add_rFonts()
-    rfonts.set(qn('w:eastAsia'), '宋体')
+    rfonts.set(qn('w:eastAsia'), b['font'])
 
     return doc
 

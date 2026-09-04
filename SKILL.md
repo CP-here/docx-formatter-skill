@@ -1,7 +1,8 @@
----
+***
+
 name: docx-formatter
 description: 生成专业排版的中文 Word (.docx) 文档，支持 OMML 数学公式、表格框图、标准排版、引用上标和轻量完整性验证。当用户要求生成带公式的 Word 文档、用数学方程格式化文档、在 Word 中创建流程图样式图表、将参考文献引用渲染为上标、或排版/格式化文档为 Word 时调用。
----
+-------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 # 中文 DOCX 排版工具
 
@@ -137,59 +138,61 @@ skill 根目录（SKILL.md 所在目录）/
 
 - `scripts/formulas.py` — 公式定义示例（仅文档含公式时需要）
 
-| 函数                                                                                                  | 用途                                                                                        |
-| --------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------- |
-| `setup_document()`                                                                                  | 创建文档，2.54cm 页边距，宋体默认字体                                                                    |
-| `add_title(doc, text)`                                                                              | 黑体 三号(16pt) 居中加粗，1.5倍行距，段前=12pt，段后=12pt                                                   |
-| `add_h1(doc, text)`                                                                                 | 黑体 三号(16pt) 左对齐加粗，1.5倍行距，段前=10pt，段后=24pt                                                  |
-| `add_h2(doc, text)`                                                                                 | 黑体 小四(12pt) 左对齐加粗，1.5倍行距，段前=18pt，段后=12pt                                                  |
-| `add_h3(doc, text)`                                                                                 | 黑体 11pt 左对齐加粗，1.5倍行距，段前=14pt，段后=8pt                                                       |
-| `add_body(doc, text)`                                                                               | 宋体 小四(12pt) 两端对齐，首行缩进2字符，1.5倍行距。支持 `**bold**` 和 `[n]` 引用上标                                |
-| `add_item_para(doc, label, text)`                                                                   | 加粗标签 + 正文，首行缩进。正文支持 `**bold**` 和 `[n]` 引用上标                                               |
-| `add_eq_para(doc, math_xml)`                                                                        | 居中块级公式段落（接收 mathHelpers 的 OMML XML 字符串）                                                   |
-| `add_body_with_math(doc, parts)`                                                                    | 正文与行内公式混排段落（parts 为 `("text", str)` / `("math", xml)` 列表）                                 |
-| `add_code_block(doc, code, font_size)`                                                              | 代码块：Consolas 等宽字体（默认9pt），浅灰底纹（F2F2F2），逐行段落，左缩进                                            |
-| `add_data_table(doc, headers, rows, col_widths, font_size)`                                         | 数据表：灰色表头（D9D9D9 黑体加粗居中），数据行宋体，末列左对齐其余居中，固定列宽                                              |
-| `add_math_to_cell(cell, omml_xml)`                                                                  | 向表格单元格插入行内 OMML 公式（居中），配合 `inlineMath()` 用于公式对照表等场景                                       |
-| `add_box(doc, text, width_cm, font_size)`                                                           | 单个居中框，用于流程图（默认宽度14cm，含单元格边距）                                                              |
-| `add_multi_line_box(doc, lines, width_cm, font_size)`                                               | 多行居中框，用于流程图（一个框内多行文字）                                                                     |
-| `add_multi_col_table(doc, cells, col_width_cm, font_size)`                                          | 并排框行（默认总宽14cm，含单元格边距）                                                                     |
-| `add_arrow_down(doc)`                                                                               | 居中 ↓ 箭头（16pt），连接上下框                                                                       |
-| `add_arrow_row(doc, left_text, right_text, total_cm, arrow_cm, font_size, left_shade, right_shade)` | 横向"过程 → 产出"行：3列表格（左\|箭头\|右），左右等宽，固定布局，箭头恒居中。融合中间竖线，可选底纹（默认全白，左灰右白传 `left_shade='D9D9D9'`） |
-| `add_separator_note(doc, text)`                                                                     | 居中虚线分隔注释（如 '----- 前处理止于此处 -----')                                                         |
-| `add_fig_caption(doc, text)`                                                                        | 图标题，位于图下方（自动："图N 描述"）                                                                     |
-| `add_table_caption(doc, text)`                                                                      | 表标题，位于表上方（自动："表N 描述"）                                                                     |
-| `reset_counters()`                                                                                  | 重置图表计数器为零（由 `setup_document()` 自动调用）                                                      |
-| `add_note(doc, text)`                                                                               | 居中斜体注释（9pt），位于图下方                                                                         |
-| `add_toc(doc, title, levels)`                                                                       | **按需**目录（黑体三号居中标题 + TOC域，levels '1-2'）                                                    |
-| `set_table_border(table)`                                                                           | 设置所有边框为单线黑色                                                                               |
-| `set_cell_shading(cell, color_hex)`                                                                 | 设置单元格背景色（如 'D9D9D9' 灰色）                                                                   |
-| `safe_extract(zf, dest)`                                                                            | 安全解压 .docx ZIP 包，防止路径遍历和符号链接攻击（可选功能用）                                                     |
-| `rezip(src_dir, out_path)`                                                                          | 将目录重新打包为 .docx 文件，确保 `[Content_Types].xml` 首位存储（可选功能用）                                    |
+| 函数                                                                                                  | 用途                                                                                                             |
+| --------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
+| `setup_document()`                                                                                  | 创建文档，2.54cm 页边距，宋体默认字体                                                                                         |
+| `set_preset(name)`                                                                                  | 整套切换排版预设（标题/正文样式、中西文字体分离、图表标题与图注字号、页边距、目录样式）；**须在** **`setup_document()`** **之前调用**；默认 `set_preset('default')` |
+| `add_title(doc, text)`                                                                              | 黑体 三号(16pt) 居中加粗，1.5倍行距，段前=12pt，段后=12pt（读预设）                                                                   |
+| `add_h1(doc, text)`                                                                                 | 黑体 三号(16pt) 左对齐加粗，1.5倍行距，段前=10pt，段后=24pt                                                                       |
+| `add_h2(doc, text)`                                                                                 | 黑体 小四(12pt) 左对齐加粗，1.5倍行距，段前=18pt，段后=12pt                                                                       |
+| `add_h3(doc, text)`                                                                                 | 黑体 11pt 左对齐加粗，1.5倍行距，段前=14pt，段后=8pt                                                                            |
+| `add_body(doc, text)`                                                                               | 宋体 小四(12pt) 两端对齐，首行缩进2字符，1.5倍行距。支持 `**bold**` 和 `[n]` 引用上标                                                     |
+| `add_item_para(doc, label, text)`                                                                   | 加粗标签 + 正文，首行缩进。正文支持 `**bold**` 和 `[n]` 引用上标                                                                    |
+| `add_eq_para(doc, math_xml)`                                                                        | 居中块级公式段落（接收 mathHelpers 的 OMML XML 字符串）                                                                        |
+| `add_body_with_math(doc, parts)`                                                                    | 正文与行内公式混排段落（parts 为 `("text", str)` / `("math", xml)` 列表）                                                      |
+| `add_code_block(doc, code, font_size)`                                                              | 代码块：Consolas 等宽字体（默认9pt），浅灰底纹（F2F2F2），逐行段落，左缩进                                                                 |
+| `add_data_table(doc, headers, rows, col_widths, font_size)`                                         | 数据表：灰色表头（D9D9D9 黑体加粗居中），数据行宋体，末列左对齐其余居中，固定列宽                                                                   |
+| `add_math_to_cell(cell, omml_xml)`                                                                  | 向表格单元格插入行内 OMML 公式（居中），配合 `inlineMath()` 用于公式对照表等场景                                                            |
+| `add_box(doc, text, width_cm, font_size)`                                                           | 单个居中框，用于流程图（默认宽度14cm，含单元格边距）                                                                                   |
+| `add_multi_line_box(doc, lines, width_cm, font_size)`                                               | 多行居中框，用于流程图（一个框内多行文字）                                                                                          |
+| `add_multi_col_table(doc, cells, col_width_cm, font_size)`                                          | 并排框行（默认总宽14cm，含单元格边距）                                                                                          |
+| `add_arrow_down(doc)`                                                                               | 居中 ↓ 箭头（16pt），连接上下框                                                                                            |
+| `add_arrow_row(doc, left_text, right_text, total_cm, arrow_cm, font_size, left_shade, right_shade)` | 横向"过程 → 产出"行：3列表格（左\|箭头\|右），左右等宽，固定布局，箭头恒居中。融合中间竖线，可选底纹（默认全白，左灰右白传 `left_shade='D9D9D9'`）                      |
+| `add_separator_note(doc, text)`                                                                     | 居中虚线分隔注释（如 '----- 前处理止于此处 -----')                                                                              |
+| `add_fig_caption(doc, text)`                                                                        | 图标题，位于图下方（自动："图N 描述"）                                                                                          |
+| `add_table_caption(doc, text)`                                                                      | 表标题，位于表上方（自动："表N 描述"）                                                                                          |
+| `reset_counters()`                                                                                  | 重置图表计数器为零（由 `setup_document()` 自动调用）                                                                           |
+| `add_note(doc, text)`                                                                               | 居中斜体注释（9pt），位于图下方                                                                                              |
+| `add_toc(doc, title, levels)`                                                                       | **按需**目录（黑体三号居中标题 + TOC域，levels '1-2'）                                                                         |
+| `set_table_border(table)`                                                                           | 设置所有边框为单线黑色                                                                                                    |
+| `set_cell_shading(cell, color_hex)`                                                                 | 设置单元格背景色（如 'D9D9D9' 灰色）                                                                                        |
+| `safe_extract(zf, dest)`                                                                            | 安全解压 .docx ZIP 包，防止路径遍历和符号链接攻击（可选功能用）                                                                          |
+| `rezip(src_dir, out_path)`                                                                          | 将目录重新打包为 .docx 文件，确保 `[Content_Types].xml` 首位存储（可选功能用）                                                         |
 
 ## 文档结构与函数映射
 
 生成文档时，请根据结构元素选择正确的函数：
 
-| 场景              | 示例                      | Python 函数                                        | 格式                       | 进入目录              |
-| --------------- | ----------------------- | ------------------------------------------------ | ------------------------ | ----------------- |
-| 文档主标题           | `技术交底书`                 | `add_title(doc, text)`                           | 黑体 16pt, 居中, 加粗          | 否                 |
-| 一级章节（一、二、）      | `一、发明名称`                | `add_h1(doc, text)`                              | 黑体 16pt, 左对齐, 加粗         | **是 (Heading 1)** |
-| 二级编号标题          | `3.1 现有技术...`           | `add_h2(doc, text)`                              | 黑体 12pt, 左对齐, 加粗         | **是 (Heading 2)** |
-| 二级步骤标题          | `步骤1：构建...`             | `add_h2(doc, text)`                              | 黑体 12pt, 左对齐, 加粗         | **是 (Heading 2)** |
-| 二级括号标题          | `（一）系统总体架构`             | `add_h2(doc, text)`                              | 黑体 12pt, 左对齐, 加粗         | **是 (Heading 2)** |
-| 三级标题            | `6.1 xxx方法`             | `add_h3(doc, text)`                              | 黑体 11pt, 左对齐, 加粗         | **是 (Heading 3)** |
-| **编号分点（加粗标签）**  | `（1）定义核心概念...：内容`       | `add_item_para(doc, "（1）定义...：", "内容")`          | 宋体 12pt, 加粗标签 + 正文, 首行缩进 | <br />            |
-| **字母子步骤（加粗标签）** | `a. 任务分解：内容`            | `add_item_para(doc, "a. 任务分解：", "内容")`           | 宋体 12pt, 加粗标签 + 正文, 首行缩进 | <br />            |
-| 普通正文段落          | 技术描述段落                  | `add_body(doc, text)`                            | 宋体 12pt, 两端对齐, 缩进2字符     | <br />            |
-| 块级数学公式          | `L = Σ ...`             | `add_eq_para(doc, math([...]))`                  | 居中，1.5倍行距                | <br />            |
-| 行内公式混排          | `其中 L_LLM 为...`         | `add_body_with_math(doc, parts)`                 | 宋体 12pt, 两端对齐            | <br />            |
-| 代码块             | 命令/源码片段                 | `add_code_block(doc, code)`                      | Consolas 9pt, 灰底, 无首行缩进  | <br />            |
-| 数据表             | 参数表 / 检查项表 / 功能矩阵       | `add_data_table(doc, headers, rows, col_widths)` | 灰色表头, 固定列宽               | <br />            |
-| 表格单元格内公式        | 公式对照表第三列                | `add_math_to_cell(cell, inlineMath([...]))`      | OMML 居中                  | <br />            |
-| 图标题             | `系统架构图` → 自动 "图1 系统架构图" | `add_fig_caption(doc, text)`                     | 宋体 10.5pt, 居中, 图下方       | <br />            |
-| 表标题             | `参数对比` → 自动 "表1 参数对比"   | `add_table_caption(doc, text)`                   | 宋体 10.5pt, 居中, 表上方       | <br />            |
-| 图注（斜体）          | `（核心：...）`              | `add_note(doc, text)`                            | 宋体 9pt, 居中, 斜体           | <br />            |
+| 场景              | 示例                      | Python 函数                                           | 格式                       | 进入目录              |
+| --------------- | ----------------------- | --------------------------------------------------- | ------------------------ | ----------------- |
+| 文档主标题           | `技术交底书`                 | `add_title(doc, text)`                              | 黑体 16pt, 居中, 加粗          | 否                 |
+| 一级章节（一、二、）      | `一、发明名称`                | `add_h1(doc, text)`                                 | 黑体 16pt, 左对齐, 加粗         | **是 (Heading 1)** |
+| 二级编号标题          | `3.1 现有技术...`           | `add_h2(doc, text)`                                 | 黑体 12pt, 左对齐, 加粗         | **是 (Heading 2)** |
+| 二级步骤标题          | `步骤1：构建...`             | `add_h2(doc, text)`                                 | 黑体 12pt, 左对齐, 加粗         | **是 (Heading 2)** |
+| 二级括号标题          | `（一）系统总体架构`             | `add_h2(doc, text)`                                 | 黑体 12pt, 左对齐, 加粗         | **是 (Heading 2)** |
+| 三级标题            | `6.1 xxx方法`             | `add_h3(doc, text)`                                 | 黑体 11pt, 左对齐, 加粗         | **是 (Heading 3)** |
+| **编号分点（加粗标签）**  | `（1）定义核心概念...：内容`       | `add_item_para(doc, "（1）定义...：", "内容")`             | 宋体 12pt, 加粗标签 + 正文, 首行缩进 | <br />            |
+| **字母子步骤（加粗标签）** | `a. 任务分解：内容`            | `add_item_para(doc, "a. 任务分解：", "内容")`              | 宋体 12pt, 加粗标签 + 正文, 首行缩进 | <br />            |
+| 普通正文段落          | 技术描述段落                  | `add_body(doc, text)`                               | 宋体 12pt, 两端对齐, 缩进2字符     | <br />            |
+| 块级数学公式          | `L = Σ ...`             | `add_eq_para(doc, math([...]))`                     | 居中，1.5倍行距                | <br />            |
+| 行内公式混排          | `其中 L_LLM 为...`         | `add_body_with_math(doc, parts)`                    | 宋体 12pt, 两端对齐            | <br />            |
+| 代码块             | 命令/源码片段                 | `add_code_block(doc, code)`                         | Consolas 9pt, 灰底, 无首行缩进  | <br />            |
+| 数据表             | 参数表 / 检查项表 / 功能矩阵       | `add_data_table(doc, headers, rows, col_widths)`    | 灰色表头, 固定列宽               | <br />            |
+| 分层架构图           | 五层系统架构图                 | `add_layered_architecture(doc, layers, col_widths)` | 表格框图堆叠, 首行加粗层名, 无连接线     | <br />            |
+| 表格单元格内公式        | 公式对照表第三列                | `add_math_to_cell(cell, inlineMath([...]))`         | OMML 居中                  | <br />            |
+| 图标题             | `系统架构图` → 自动 "图1 系统架构图" | `add_fig_caption(doc, text)`                        | 宋体 10.5pt, 居中, 图下方       | <br />            |
+| 表标题             | `参数对比` → 自动 "表1 参数对比"   | `add_table_caption(doc, text)`                      | 宋体 10.5pt, 居中, 表上方       | <br />            |
+| 图注（斜体）          | `（核心：...）`              | `add_note(doc, text)`                               | 宋体 9pt, 居中, 斜体           | <br />            |
 
 ### 关键规则
 
@@ -230,6 +233,56 @@ NJUThesis 全局使用 `linespread = 1.625`。计算方式：LaTeX 默认行距�
 - `pf.line_spacing = 1.5` 设置 Word 1.5倍行距。`pf.space_before` / `pf.space_after` 控制段落间距。
 
 - 标题前的空段落（`doc.add_paragraph()`）已移除，间距改由 `space_before` / `space_after` 精确控制，结构更干净。
+
+## 排版预设（PRESETS / set\_preset）
+
+排版参数集中在 `build_docx.py` 顶部的 `PRESETS` 字典中（嵌套分组），不在各 `add_*` 函数内散落硬编码。
+
+**分组结构**：
+
+| 分组            | 键                                                                                                       | 说明                                  |
+| ------------- | ------------------------------------------------------------------------------------------------------- | ----------------------------------- |
+| `west`        | `separate` / `body` / `head`                                                                            | 中西文字体分离开关及西文正文/标题字体（默认关闭）           |
+| `title`\~`h3` | `font` / `size` / `bold` / `color` / `line_spacing` / `space_before` / `space_after`                    | 标题样式                                |
+| `body`        | `font` / `size` / `line_spacing` / `first_line_indent` / `space_before` / `space_after`                 | 正文；间距为 `None` 表示不设置、沿用样式继承（默认不设段间距） |
+| `item`        | `space_before` / `space_after`                                                                          | 分点段落间距                              |
+| `caption`     | `size`                                                                                                  | 图/表标题字号                             |
+| `note`        | `size`                                                                                                  | 图注字号                                |
+| `page`        | `margin_top` / `margin_bottom` / `margin_left` / `margin_right` / `header_distance` / `footer_distance` | 页边距与页眉页脚距离（cm）                      |
+| `toc`         | `title_font` / `title_size` / `toc1_font` / `toc1_size` / `toc2_font` / `toc2_size` / `line_spacing`    | 目录标题、一级/二级条目样式与固定行距（pt）             |
+
+**切换方式**：`set_preset('name')` 整套切换，`add_*` 函数读取当前激活预设。默认激活 `default`（数值与「行距与标题间距」一节完全一致），无需显式调用。**须在** **`setup_document()`** **之前调用**：页面边距与 Normal 默认字体在 `setup_document()` 时读取预设。
+
+**中西文分离**：将预设 `west.separate` 设为 `True` 后，西文字符使用 `west.body` / `west.head` 指定的字体（如 Times New Roman），中文保持各元素字体不变。
+
+**不覆盖**（按约定保持函数内硬编码，避免过度抽象）：代码块、数据表、框图、箭头、公式段。
+
+**新增预设**：向 `PRESETS` 添加一份同键结构的嵌套字典即可，例如紧凑版或西文版。
+
+## 分层架构图（add\_layered\_architecture）
+
+用表格框图堆叠表达多层架构（如"应用层 → 引擎层 → 三个并列支撑层 → 数据接入层"），配合 `add_fig_caption` 生成图标题。
+
+```python
+add_layered_architecture(doc, [
+    ["应用层（前端 · B/S）", "菜单栏 / 数据上传 / 参数配置"],
+    ["服务层（后端 AI）", "输入就位 → 模型推理 → 结果解析"],
+    [["预处理模块", "高清栅格化"],
+     ["配置模块", "参数模板库"],
+     ["模型服务（用户自理）", "第三方大模型接入"]],
+    ["数据接入层：上传 → 校验 → 归档"],
+], col_widths=[3.8, 4.5, 5.7])
+```
+
+- 元素为 `list[str]` → 全宽层框（首行加粗层名，其余居中内容行）
+
+- 元素为 `list[list[str]]` → 一行并列框（每个框首行加粗层名）
+
+- `col_widths` 控制并列框列宽（cm）；不传则按 `width_cm`（默认14cm）均分
+
+- 层间自动插入小空段（技术上必须：无间隔段落时 Word 会把相邻表格合并为一张表）
+
+- 第一版**不画连接线/箭头**；需要时可在层间手动插入 `add_arrow_down`
 
 ## 图表自动编号
 
