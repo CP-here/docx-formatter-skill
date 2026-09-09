@@ -56,28 +56,28 @@ import zipfile
 PRESETS = {
     'default': {
         'west': {
-            'separate': False,           # 中西文分离开关（默认关闭，保持原行为）
-            'body': 'Times New Roman',    # 西文正文字体（分离开启时生效）
-            'head': 'Times New Roman',    # 西文标题字体（分离开启时生效）
+            'separate': True,            # 中西文分离（对齐 NJUThesis：正文西文衬线、标题西文无衬线）
+            'body': 'Times New Roman',    # 西文正文字体（衬线）
+            'head': 'Arial',             # 西文标题字体（无衬线，对齐 NJUThesis \sffamily）
         },
-        'title': {'font': '黑体', 'size': 16, 'bold': True, 'color': None,
-                  'line_spacing': 1.5, 'space_before': 12, 'space_after': 12},
+        'title': {'font': '黑体', 'size': 26, 'bold': True, 'color': None,
+                  'line_spacing': 1.5, 'space_before': 24, 'space_after': 18},
         'h1':    {'font': '黑体', 'size': 16, 'bold': True, 'color': (0, 0, 0),
-                  'line_spacing': 1.5, 'space_before': 10, 'space_after': 24},
+                  'line_spacing': 1.5, 'space_before': 24, 'space_after': 6},
         'h2':    {'font': '黑体', 'size': 12, 'bold': True, 'color': (0, 0, 0),
-                  'line_spacing': 1.5, 'space_before': 18, 'space_after': 12},
-        'h3':    {'font': '黑体', 'size': 11, 'bold': True, 'color': (0, 0, 0),
-                  'line_spacing': 1.5, 'space_before': 14, 'space_after': 8},
+                  'line_spacing': 1.5, 'space_before': 12, 'space_after': 6},
+        'h3':    {'font': '黑体', 'size': 12, 'bold': True, 'color': (0, 0, 0),
+                  'line_spacing': 1.5, 'space_before': 12, 'space_after': 6},
         'body':  {'font': '宋体', 'size': 12, 'line_spacing': 1.5,
                   'first_line_indent': 24,
                   # None = 不设置，沿用样式继承（原实现正文不另设段间距）
                   'space_before': None, 'space_after': None},
         'item':  {'space_before': None, 'space_after': 7},
-        'caption': {'size': 10.5},   # 图/表标题字号
+        'caption': {'size': 10.5, 'label_bold': True},   # 图/表标题字号与标签加粗（对齐 NJUThesis njucap）
         'note':  {'size': 9},         # 图注字号（斜体小字）
         'page': {
             'margin_top': 2.54, 'margin_bottom': 2.54,
-            'margin_left': 2.54, 'margin_right': 2.54,
+            'margin_left': 3.18, 'margin_right': 3.18,
             'header_distance': 1.27, 'footer_distance': 1.27,
         },
         'toc': {
@@ -868,9 +868,14 @@ def add_fig_caption(doc, text):
     p.paragraph_format.space_after = Pt(12)
     if text:
         _fig_counter += 1
-        caption = f"图{_fig_counter} {text}"
-        run = p.add_run(caption)
-        set_run_font(run, '宋体', _ACTIVE_PRESET['caption']['size'], bold=False)
+        # 对齐 NJUThesis njucap：标签加粗，标签与描述间全角空格（labelsep=quad）
+        cap = _ACTIVE_PRESET['caption']
+        label_run = p.add_run(f"图{_fig_counter}")
+        set_run_font(label_run, '宋体', cap['size'], bold=cap.get('label_bold', False))
+        sep_run = p.add_run("　")
+        set_run_font(sep_run, '宋体', cap['size'])
+        text_run = p.add_run(text)
+        set_run_font(text_run, '宋体', cap['size'])
 
 
 def add_table_caption(doc, text):
@@ -880,14 +885,19 @@ def add_table_caption(doc, text):
     """
     global _tbl_counter
     _tbl_counter += 1
-    caption = f"表{_tbl_counter} {text}"
     p = doc.add_paragraph()
     p.alignment = WD_ALIGN_PARAGRAPH.CENTER
     p.paragraph_format.first_line_indent = Pt(0)
     p.paragraph_format.space_before = Pt(12)
     p.paragraph_format.space_after = Pt(6)
-    run = p.add_run(caption)
-    set_run_font(run, '宋体', _ACTIVE_PRESET['caption']['size'], bold=False)
+    # 对齐 NJUThesis njucap：标签加粗，标签与描述间全角空格（labelsep=quad）
+    cap = _ACTIVE_PRESET['caption']
+    label_run = p.add_run(f"表{_tbl_counter}")
+    set_run_font(label_run, '宋体', cap['size'], bold=cap.get('label_bold', False))
+    sep_run = p.add_run("　")
+    set_run_font(sep_run, '宋体', cap['size'])
+    text_run = p.add_run(text)
+    set_run_font(text_run, '宋体', cap['size'])
 
 
 def add_note(doc, text):
@@ -900,6 +910,46 @@ def add_note(doc, text):
     run = p.add_run(text)
     set_run_font(run, '宋体', _ACTIVE_PRESET['note']['size'], bold=False)
     run.italic = True
+
+
+def add_bibliography(doc, entries, title='参考文献'):
+    """Bibliography section, GB/T 7714-2015 numeric style (aligned with NJUThesis).
+
+    Title: 黑体 三号(16pt) 加粗 居中, uses Heading 1 style so it enters TOC
+    (like NJUThesis unnumbered 参考文献 chapter).
+    Entries: 宋体 五号(10.5pt), justified, 1.5x line spacing, hanging indent
+    (2 chars) so wrapped lines align after the [n] label.
+
+    entries: list of GB/T 7714-2015 formatted strings WITHOUT the leading
+    [n] label — labels [1], [2], ... auto-numbered in given order,
+    matching in-text citation superscripts rendered by add_body.
+    Entry examples:
+      期刊: 作者. 题名[J]. 刊名, 年, 卷(期): 页码
+      图书: 作者. 书名[M]. 出版地: 出版社, 年
+      会议: 作者. 题名[C]//会议名. 出版地: 出版社, 年: 页码
+      学位论文: 作者. 题名[D]. 城市: 学校, 年
+      电子资源: 作者. 题名[EB/OL]. (更新日期)[引用日期]. 访问路径
+    """
+    s = _ACTIVE_PRESET['h1']
+    p = doc.add_paragraph()
+    p.style = doc.styles['Heading 1']
+    p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    p.paragraph_format.first_line_indent = Pt(0)
+    p.paragraph_format.line_spacing = s['line_spacing']
+    p.paragraph_format.space_before = Pt(s['space_before'])
+    p.paragraph_format.space_after = Pt(s['space_after'])
+    run = p.add_run(title)
+    set_run_font(run, s['font'], s['size'], bold=s['bold'],
+                 color=_preset_color(s['color']), west_font=_west_font('head'))
+    for i, entry in enumerate(entries, 1):
+        ep = doc.add_paragraph()
+        ep.alignment = WD_ALIGN_PARAGRAPH.JUSTIFY
+        ep.paragraph_format.first_line_indent = Pt(-21)
+        ep.paragraph_format.left_indent = Pt(21)
+        ep.paragraph_format.line_spacing = 1.5
+        ep.paragraph_format.space_after = Pt(3)
+        erun = ep.add_run(f"[{i}] {entry}")
+        set_run_font(erun, '宋体', 10.5, bold=False, west_font=_west_font('body'))
 
 
 def _setup_toc_styles(doc):
@@ -1071,7 +1121,37 @@ def setup_document():
     rfonts = rpr.get_or_add_rFonts()
     rfonts.set(qn('w:eastAsia'), b['font'])
 
+    _add_page_number_footer(doc)
+
     return doc
+
+
+def _add_page_number_footer(doc):
+    """Footer page number: centered, 五号(10.5pt) Times New Roman (NJUThesis style).
+
+    Inserts a PAGE field into the default footer paragraph of every section,
+    so page numbers render in Word after field update.
+    """
+    for section in doc.sections:
+        footer = section.footer
+        footer.is_linked_to_previous = False
+        p = footer.paragraphs[0] if footer.paragraphs else footer.add_paragraph()
+        # clear any default empty run
+        for existing_run in list(p.runs):
+            existing_run._element.getparent().remove(existing_run._element)
+        p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+        run = p.add_run()
+        fld_begin = OxmlElement('w:fldChar')
+        fld_begin.set(qn('w:fldCharType'), 'begin')
+        instr = OxmlElement('w:instrText')
+        instr.set(qn('xml:space'), 'preserve')
+        instr.text = ' PAGE '
+        fld_sep = OxmlElement('w:fldChar')
+        fld_sep.set(qn('w:fldCharType'), 'separate')
+        fld_end = OxmlElement('w:fldChar')
+        fld_end.set(qn('w:fldCharType'), 'end')
+        run._element.extend([fld_begin, instr, fld_sep, fld_end])
+        set_run_font(run, 'Times New Roman', 10.5)
 
 
 # ============================================================
