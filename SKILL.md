@@ -249,7 +249,7 @@ NJUThesis 全局使用 `linespread = 1.625`。计算方式：LaTeX 默认行距�
 | `item`        | `space_before` / `space_after`                                                                          | 分点段落间距                              |
 | `caption`     | `size`                                                                                                  | 图/表标题字号                             |
 | `note`        | `size`                                                                                                  | 图注字号                                |
-| `page`        | `margin_top` / `margin_bottom` / `margin_left` / `margin_right` / `header_distance` / `footer_distance` | 页边距与页眉页脚距离（cm）                      |
+| `page`        | `page_width` / `page_height` / `margin_top` / `margin_bottom` / `margin_left` / `margin_right` / `header_distance` / `footer_distance` | 纸张尺寸（cm）与页边距、页眉页脚距离（cm）         |
 | `toc`         | `title_font` / `title_size` / `toc1_font` / `toc1_size` / `toc2_font` / `toc2_size` / `line_spacing`    | 目录标题、一级/二级条目样式与固定行距（pt）             |
 
 **切换方式**：`set_preset('name')` 整套切换，`add_*` 函数读取当前激活预设。默认激活 `default`（数值与「行距与标题间距」一节完全一致），无需显式调用。**须在** **`setup_document()`** **之前调用**：页面边距与 Normal 默认字体在 `setup_document()` 时读取预设。
@@ -279,7 +279,7 @@ add_layered_architecture(doc, [
 
 - 元素为 `list[list[str]]` → 一行并列框（每个框首行加粗层名）
 
-- `col_widths` 控制并列框列宽（cm）；不传则按 `width_cm`（默认14cm）均分
+- 整图总宽**只有一个来源**：传 `col_widths` 时**其和即总宽**，全宽层与并列层共用同一个总宽，上下框体必然等宽；只传 `width_cm`（默认 `TABLE_WIDTH_CM` = 14cm）时它即总宽，并列层按总宽均分
 
 - 层间自动插入小空段（技术上必须：无间隔段落时 Word 会把相邻表格合并为一张表）
 
@@ -437,7 +437,7 @@ add_body(doc, "正文内容...")
 
 ### 页面设置
 
-- 纸张大小：A4（11907 × 16840 twips）
+- 纸张大小：A4（21 × 29.7 cm，由预设 `page.page_width` / `page.page_height` 给定；左右边距 3.18cm 时版心宽 14.64cm）
 
 - 页边距：上下 2.54cm，左右 3.18cm（对齐 NJUThesis hmargin=3.18cm）
 
@@ -660,7 +660,7 @@ add_data_table(doc,
     col_widths=[2.2, 1.8, 1.8], font_size=9.5)
 ```
 
-注意：`col_widths` 总宽度建议 ≤ 14.5cm（A4 减去页边距后的版心宽度）；数据行末列左对齐（描述列），其余居中。
+注意：`col_widths` 之和即表格总宽，建议 ≤ 14.64cm（A4 21cm 减左右各 3.18cm 的版心宽）；数据行末列左对齐（描述列），其余居中。
 
 ### 单元格内公式（add\_math\_to\_cell）
 
@@ -700,6 +700,8 @@ add_math_to_cell(table.cell(1, 2), inlineMath([sub("y", "pred")]))
 6. `add_fig_caption(doc, "描述")` — 图后标题
 7. `add_note(doc, "annotation text")` — 图下斜体注释
 
+**宽度**：所有表格（单框 / 多行框 / 并行框 / 数据表 / 箭头行）都由内部 `_new_table()` 建立，**表总宽 = 传入列宽之和**——一次性写入 `w:tblW`（dxa）、`w:tblGrid`、每个 `w:tcW`，并锁定 `tblLayout=fixed`。调用方只提供列宽、不要自己设宽；同一张图内各行的列宽之和保持相等，框体才会左右对齐。默认总宽见常量 `TABLE_WIDTH_CM`（14cm）。
+
 ## 工作流程
 
 1. **阅读**用户提供的源文本/内容
@@ -730,7 +732,7 @@ add_math_to_cell(table.cell(1, 2), inlineMath([sub("y", "pred")]))
 3. **禁止手写 m:nary 空上标**：始终使用 mathHelpers.py 中的 `sumOp()` — 它使用 `m:sSub` 配合 Unicode ∑，避免空上标渲染问题
 4. **始终展平列表**：所有数学辅助函数使用 `_flat()` — 新增函数时需对所有 children 参数应用 `_flat()`
 5. **字体东亚设置**：python-docx 中必须设置 `rFonts.set(qn('w:eastAsia'), font_name)` 才能正确渲染中文字体
-6. **表格列宽**：必须同时设置 `table.columns[i].width` 和每个 cell 的 width，否则 Word autofit 会重排列宽
+6. **表格列宽**：所有表格（框图 / 数据表 / 箭头行）一律经内部 `_new_table()` 建立——它把 `w:tblW`（dxa 总宽）、`w:tblGrid/gridCol`、每个 `w:tcW` 从**同一份列宽**一次写入并把布局锁为 fixed，宽度只有一个来源；默认总宽取常量 `TABLE_WIDTH_CM`（14cm）。**不要绕开它用 `doc.add_table()` 自建表格**，否则宽度会出现第二个口径，字多的那格被 Word autofit 撑宽，同一张图上下框体就会不等宽
 7. **表格底纹**：使用 `WD_FILL_PATTERN.CLEAR` 类型底纹而非其他填充模式，否则部分 Word 版本渲染异常
 8. **列表符号**：使用 Word 内置编号样式，切勿在文本中直接写 `•` 字符
 9. **脚本级变量**：`_fig_counter` / `_tbl_counter` 在 `setup_document()` 中自动重置。单进程多次生成文档时，只要重新调用 `setup_document()` 即可从 图1/表1 开始

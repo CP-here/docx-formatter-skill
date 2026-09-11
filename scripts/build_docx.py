@@ -20,6 +20,8 @@ Features:
   - 宋体小四(12pt) body, first-line indent 2 chars, 1.5 line spacing
   - Table-box diagrams: add_box(), add_multi_line_box(), add_multi_col_table(), add_arrow_down()
   - Layered architecture diagrams: add_layered_architecture(doc, layers)
+  - Single width source: every table is built by _new_table(), which writes
+    w:tblW + w:tblGrid + w:tcW from one column-width list
   - Cell margins (tcMar) for all table-box elements
   - Figure notes: add_note() for italic annotations below figures
   - Table Grid style with header shading (D9D9D9, gray)
@@ -27,7 +29,7 @@ Features:
 """
 
 from docx import Document
-from docx.shared import Pt, Cm, RGBColor
+from docx.shared import Pt, Cm, Twips, RGBColor
 from docx.enum.text import WD_ALIGN_PARAGRAPH
 from docx.enum.table import WD_TABLE_ALIGNMENT, WD_ALIGN_VERTICAL
 from docx.enum.style import WD_STYLE_TYPE
@@ -46,7 +48,7 @@ import zipfile
 #   - title~h3    标题字体/字号/加粗/颜色/行距/段前后
 #   - body/item   正文与分点段落（字体/字号/行距/缩进/段前后；None=不设置）
 #   - caption/note 图表标题与图注字号
-#   - page        页边距 + 页眉/页脚距离
+#   - page        纸张尺寸 + 页边距 + 页眉/页脚距离
 #   - toc         目录标题/条目样式与固定行距
 # 不覆盖：代码块、数据表、框图、箭头、公式段（保持函数内硬编码）。
 # 切换方式：set_preset('name') 整套切换；须在 setup_document() 之前调用
@@ -76,6 +78,7 @@ PRESETS = {
         'caption': {'size': 10.5, 'label_bold': True},   # 图/表标题字号与标签加粗（对齐 NJUThesis njucap）
         'note':  {'size': 9},         # 图注字号（斜体小字）
         'page': {
+            'page_width': 21.0, 'page_height': 29.7,      # A4（21 × 29.7 cm）
             'margin_top': 2.54, 'margin_bottom': 2.54,
             'margin_left': 3.18, 'margin_right': 3.18,
             'header_distance': 1.27, 'footer_distance': 1.27,
@@ -407,23 +410,15 @@ def add_data_table(doc, headers, rows, col_widths, font_size=9.5):
     Args:
         headers: list of header strings.
         rows: list of row lists (same length as headers).
-        col_widths: column widths in cm, same length as headers.
+        col_widths: column widths in cm, same length as headers; their sum is
+                    the table's total width (keep it ≤ the 版心宽).
         font_size: cell font size in pt (default 9.5).
     """
-    table = doc.add_table(rows=1 + len(rows), cols=len(headers))
-    table.alignment = WD_TABLE_ALIGNMENT.CENTER
-    table.style = 'Table Grid'
-    set_table_border(table)
-    _set_table_fixed_layout(table)
-    for i, w in enumerate(col_widths):
-        table.columns[i].width = Cm(w)
+    table = _new_table(doc, 1 + len(rows), col_widths, margins=60)
     # Header
     for j, h in enumerate(headers):
         cell = table.cell(0, j)
-        cell.width = Cm(col_widths[j])
-        cell.vertical_alignment = WD_ALIGN_VERTICAL.CENTER
         set_cell_shading(cell, 'D9D9D9')
-        _set_cell_margins(cell, 60)
         p = cell.paragraphs[0]
         p.alignment = WD_ALIGN_PARAGRAPH.CENTER
         p.paragraph_format.first_line_indent = Pt(0)
@@ -432,9 +427,6 @@ def add_data_table(doc, headers, rows, col_widths, font_size=9.5):
     for i, row in enumerate(rows):
         for j, val in enumerate(row):
             cell = table.cell(i + 1, j)
-            cell.width = Cm(col_widths[j])
-            cell.vertical_alignment = WD_ALIGN_VERTICAL.CENTER
-            _set_cell_margins(cell, 60)
             p = cell.paragraphs[0]
             p.alignment = (WD_ALIGN_PARAGRAPH.CENTER if j < len(row) - 1
                            else WD_ALIGN_PARAGRAPH.LEFT)
@@ -516,6 +508,13 @@ def set_cell_shading(cell, color_hex):
 # TABLE-BOX DIAGRAM HELPERS (for flowcharts without images)
 # ============================================================
 
+# 框图/表格总宽的唯一来源（cm）。所有框图函数的默认宽度都取它；
+# 单张表格的列宽之和即该表总宽，由 _new_table() 一次性写入
+# w:tblW + w:tblGrid + w:tcW 三处，宽度不存在第二个口径。
+# A4 + 左右边距各 3.18cm 的版心宽为 14.64cm，可按需传入更大值。
+TABLE_WIDTH_CM = 14.0
+
+
 def _set_cell_margins(cell, margin_dxa=80):
     """Set cell internal margins (top/bottom/left/right) in dxa units."""
     tc = cell._element
@@ -529,48 +528,88 @@ def _set_cell_margins(cell, margin_dxa=80):
         tcMar, 'w:textDirection', 'w:tcFitText', 'w:vAlign', 'w:hideMark')
 
 
-def add_box(doc, text, width_cm=14, font_size=10.5, bold=True):
-    """Single centered box for flowchart steps."""
-    table = doc.add_table(rows=1, cols=1)
+def _set_table_width(table, total_twips):
+    """Write the table's total width into w:tblW as an explicit dxa length.
+
+    `total_twips` is the exact sum of the columns' w:gridCol twips, so w:tblW,
+    w:tblGrid and w:tcW agree down to the twip. python-docx creates every table
+    with ``<w:tblW w:type="auto" w:w="0"/>`` — "let the renderer decide", which
+    is the autofit switch — so replacing it with a dxa length pins the total
+    width independently of the grid and of any renderer's autofit.
+    """
+    tblPr = table._element.tblPr
+    tblW = tblPr.find(qn('w:tblW'))
+    if tblW is None:
+        tblW = OxmlElement('w:tblW')
+        tblPr.insert_element_before(
+            tblW, 'w:jc', 'w:tblCellSpacing', 'w:tblInd', 'w:tblBorders',
+            'w:shd', 'w:tblLayout', 'w:tblCellMar', 'w:tblLook')
+    tblW.set(qn('w:type'), 'dxa')
+    tblW.set(qn('w:w'), str(int(total_twips)))
+
+
+def _new_table(doc, row_count, col_widths_cm, margins=60, borders=None):
+    """Create a table whose width has exactly ONE source: `col_widths_cm`.
+
+    The three places a table stores its geometry — the total width (w:tblW),
+    the column grid (w:tblGrid/gridCol) and each cell width (w:tcW) — are all
+    written from the same list, and the layout is locked to fixed. Callers only
+    fill in cell content; they must not set widths themselves.
+
+    Args:
+        doc: the Document to add the table to.
+        row_count: number of rows to create.
+        col_widths_cm: list of column widths in cm; their sum is the table width.
+        margins: cell internal margins in dxa (default 60).
+        borders: border helper applied to the table (default set_table_border).
+    """
+    borders = borders or set_table_border
+    # 总宽 = 列宽之和，只取整一次；各列按四舍五入取 twips，末列用差值补齐，
+    # 再以 Twips() 原样写回 gridCol 与 tcW。于是 ΣgridCol == ΣtcW == tblW
+    # 严格相等，且同一总宽无论分成几列，表宽都是同一个数——全宽层与并列层
+    # 不可能差出 1 twip（不要用 Cm() 反算，它在 twips→cm→EMU 时会掉半个 twip）。
+    total_twips = Cm(sum(col_widths_cm)).twips
+    col_twips = [Cm(w).twips for w in col_widths_cm]
+    col_twips[-1] = total_twips - sum(col_twips[:-1])
+    table = doc.add_table(rows=row_count, cols=len(col_widths_cm))
     table.alignment = WD_TABLE_ALIGNMENT.CENTER
     table.style = 'Table Grid'
-    cell = table.cell(0, 0)
-    cell.width = Cm(width_cm)
-    cell.vertical_alignment = WD_ALIGN_VERTICAL.CENTER
-    _set_cell_margins(cell, 80)
-    p = cell.paragraphs[0]
-    p.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    p.paragraph_format.first_line_indent = Pt(0)
-    run = p.add_run(text)
-    set_run_font(run, '宋体', font_size, bold=bold)
+    _set_table_width(table, total_twips)
+    borders(table)
+    _set_table_fixed_layout(table)
+    for j, tw in enumerate(col_twips):
+        table.columns[j].width = Twips(tw)      # → w:tblGrid/w:gridCol
+        for row in table.rows:
+            cell = row.cells[j]
+            cell.width = Twips(tw)              # → w:tcW
+            cell.vertical_alignment = WD_ALIGN_VERTICAL.CENTER
+            _set_cell_margins(cell, margins)
     return table
 
 
-def add_multi_line_box(doc, lines, width_cm=14, font_size=10.5):
+def add_box(doc, text, width_cm=TABLE_WIDTH_CM, font_size=10.5, bold=True):
+    """Single centered box for flowchart steps."""
+    table = _new_table(doc, 1, [width_cm], margins=80)
+    p = table.cell(0, 0).paragraphs[0]
+    p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    p.paragraph_format.first_line_indent = Pt(0)
+    set_run_font(p.add_run(text), '宋体', font_size, bold=bold)
+    return table
+
+
+def add_multi_line_box(doc, lines, width_cm=TABLE_WIDTH_CM, font_size=10.5):
     """Multi-line centered box for flowchart steps.
 
     lines: list of strings, each rendered as a separate centered line.
     """
-    table = doc.add_table(rows=1, cols=1)
-    table.alignment = WD_TABLE_ALIGNMENT.CENTER
-    table.style = 'Table Grid'
+    table = _new_table(doc, 1, [width_cm], margins=80)
     cell = table.cell(0, 0)
-    cell.width = Cm(width_cm)
-    cell.vertical_alignment = WD_ALIGN_VERTICAL.CENTER
-    _set_cell_margins(cell, 80)
-
     for i, line in enumerate(lines):
-        if i == 0:
-            p = cell.paragraphs[0]
-        else:
-            p = cell.add_paragraph()
+        p = cell.paragraphs[0] if i == 0 else cell.add_paragraph()
         p.alignment = WD_ALIGN_PARAGRAPH.CENTER
         p.paragraph_format.first_line_indent = Pt(0)
         p.paragraph_format.space_after = Pt(2)
-        run = p.add_run(line)
-        set_run_font(run, '宋体', font_size, bold=True)
-
-    set_table_border(table)
+        set_run_font(p.add_run(line), '宋体', font_size, bold=True)
     return table
 
 
@@ -578,22 +617,15 @@ def add_multi_col_table(doc, cells, col_width_cm=None, font_size=10.5):
     """
     Side-by-side boxes in a single row.
     cells: list of strings or list of (title, desc) tuples.
-    col_width_cm: list of column widths in cm, or None for equal distribution.
+    col_width_cm: list of column widths in cm; None distributes
+                  TABLE_WIDTH_CM evenly across the columns.
     """
-    n = len(cells)
-    table = doc.add_table(rows=1, cols=n)
-    table.alignment = WD_TABLE_ALIGNMENT.CENTER
-    table.style = 'Table Grid'
-
     if col_width_cm is None:
-        total_width = 14  # default total ~14cm
-        col_width_cm = [total_width / n] * n
+        col_width_cm = [TABLE_WIDTH_CM / len(cells)] * len(cells)
 
+    table = _new_table(doc, 1, col_width_cm, margins=60)
     for i, cell_data in enumerate(cells):
         cell = table.cell(0, i)
-        cell.width = Cm(col_width_cm[i])
-        cell.vertical_alignment = WD_ALIGN_VERTICAL.CENTER
-        _set_cell_margins(cell, 60)
 
         if isinstance(cell_data, tuple):
             title, desc = cell_data
@@ -616,7 +648,6 @@ def add_multi_col_table(doc, cells, col_width_cm=None, font_size=10.5):
             run = p.add_run(cell_data)
             set_run_font(run, '宋体', font_size, bold=True)
 
-    set_table_border(table)
     return table
 
 
@@ -647,7 +678,7 @@ def _set_table_fixed_layout(table):
     layout.set(qn('w:type'), 'fixed')
 
 
-def add_arrow_row(doc, left_text, right_text, total_cm=14.0, arrow_cm=2.0,
+def add_arrow_row(doc, left_text, right_text, total_cm=TABLE_WIDTH_CM, arrow_cm=2.0,
                   font_size=10.5, left_bold=True, right_bold=False,
                   left_shade=None, right_shade=None):
     """Horizontal "process → output" row with arrow centered in the table.
@@ -665,7 +696,7 @@ def add_arrow_row(doc, left_text, right_text, total_cm=14.0, arrow_cm=2.0,
     Args:
         left_text: text for the left box (process step).
         right_text: text for the right box (output/result).
-        total_cm: total table width in cm (default 14.0).
+        total_cm: total table width in cm (default TABLE_WIDTH_CM).
         arrow_cm: width of the arrow column in cm (default 2.0).
         font_size: font size for left/right text (default 10.5).
         left_bold: whether left text is bold (default True).
@@ -675,17 +706,11 @@ def add_arrow_row(doc, left_text, right_text, total_cm=14.0, arrow_cm=2.0,
     """
     side_cm = (total_cm - arrow_cm) / 2.0
 
-    table = doc.add_table(rows=1, cols=3)
-    table.alignment = WD_TABLE_ALIGNMENT.CENTER
-    table.style = 'Table Grid'
-    set_table_border_no_insideV(table)
-    _set_table_fixed_layout(table)
+    table = _new_table(doc, 1, [side_cm, arrow_cm, side_cm], margins=80,
+                       borders=set_table_border_no_insideV)
 
     # Left box (process)
     c0 = table.cell(0, 0)
-    c0.width = Cm(side_cm)
-    c0.vertical_alignment = WD_ALIGN_VERTICAL.CENTER
-    _set_cell_margins(c0, 80)
     if left_shade:
         set_cell_shading(c0, left_shade)
     p0 = c0.paragraphs[0]
@@ -694,31 +719,19 @@ def add_arrow_row(doc, left_text, right_text, total_cm=14.0, arrow_cm=2.0,
     set_run_font(p0.add_run(left_text), '宋体', font_size, bold=left_bold)
 
     # Arrow (centered in its own column; equal side widths ⇒ table center)
-    c1 = table.cell(0, 1)
-    c1.width = Cm(arrow_cm)
-    c1.vertical_alignment = WD_ALIGN_VERTICAL.CENTER
-    p1 = c1.paragraphs[0]
+    p1 = table.cell(0, 1).paragraphs[0]
     p1.alignment = WD_ALIGN_PARAGRAPH.CENTER
     p1.paragraph_format.first_line_indent = Pt(0)
     set_run_font(p1.add_run('\u2192'), '宋体', 14, bold=True)
 
     # Right box (output)
     c2 = table.cell(0, 2)
-    c2.width = Cm(side_cm)
-    c2.vertical_alignment = WD_ALIGN_VERTICAL.CENTER
-    _set_cell_margins(c2, 80)
     if right_shade:
         set_cell_shading(c2, right_shade)
     p2 = c2.paragraphs[0]
     p2.alignment = WD_ALIGN_PARAGRAPH.CENTER
     p2.paragraph_format.first_line_indent = Pt(0)
     set_run_font(p2.add_run(right_text), '宋体', font_size, bold=right_bold)
-
-    # Enforce widths on all rows (insurance against Word reflow)
-    for r in table.rows:
-        r.cells[0].width = Cm(side_cm)
-        r.cells[1].width = Cm(arrow_cm)
-        r.cells[2].width = Cm(side_cm)
 
     return table
 
@@ -759,51 +772,39 @@ def _add_layer_spacer(doc, size_pt=6):
 
 def _add_arch_box(doc, lines, width_cm, font_size):
     """Single full-width layer box; lines[0] bold (layer name), rest plain."""
-    table = doc.add_table(rows=1, cols=1)
-    table.alignment = WD_TABLE_ALIGNMENT.CENTER
-    table.style = 'Table Grid'
+    table = _new_table(doc, 1, [width_cm], margins=80)
     cell = table.cell(0, 0)
-    cell.width = Cm(width_cm)
-    cell.vertical_alignment = WD_ALIGN_VERTICAL.CENTER
-    _set_cell_margins(cell, 80)
     for i, line in enumerate(lines):
         p = cell.paragraphs[0] if i == 0 else cell.add_paragraph()
         p.alignment = WD_ALIGN_PARAGRAPH.CENTER
         p.paragraph_format.first_line_indent = Pt(0)
         p.paragraph_format.space_after = Pt(2)
         set_run_font(p.add_run(line), '宋体', font_size, bold=(i == 0))
-    set_table_border(table)
-    _set_table_fixed_layout(table)
     return table
 
 
-def _add_arch_parallel(doc, boxes, width_cm, col_widths, font_size):
-    """Row of parallel layer boxes; each box's lines[0] bold (layer name)."""
-    n = len(boxes)
-    table = doc.add_table(rows=1, cols=n)
-    table.alignment = WD_TABLE_ALIGNMENT.CENTER
-    table.style = 'Table Grid'
+def _add_arch_parallel(doc, boxes, total_cm, col_widths, font_size):
+    """Row of parallel layer boxes; each box's lines[0] bold (layer name).
+
+    Column widths sum to `total_cm` either directly (col_widths given) or by
+    even split — the caller passes the diagram's single total width, so this
+    row can never end up wider or narrower than the full-width layers.
+    """
     if col_widths is None:
-        col_widths = [width_cm / n] * n
+        col_widths = [total_cm / len(boxes)] * len(boxes)
+    table = _new_table(doc, 1, col_widths, margins=60)
     for i, lines in enumerate(boxes):
         cell = table.cell(0, i)
-        cell.width = Cm(col_widths[i])
-        cell.vertical_alignment = WD_ALIGN_VERTICAL.CENTER
-        _set_cell_margins(cell, 60)
         for k, line in enumerate(lines):
             p = cell.paragraphs[0] if k == 0 else cell.add_paragraph()
             p.alignment = WD_ALIGN_PARAGRAPH.CENTER
             p.paragraph_format.first_line_indent = Pt(0)
             p.paragraph_format.space_after = Pt(2)
             set_run_font(p.add_run(line), '宋体', font_size, bold=(k == 0))
-    for i, w in enumerate(col_widths):
-        table.columns[i].width = Cm(w)
-    set_table_border(table)
-    _set_table_fixed_layout(table)
     return table
 
 
-def add_layered_architecture(doc, layers, width_cm=14, col_widths=None,
+def add_layered_architecture(doc, layers, width_cm=TABLE_WIDTH_CM, col_widths=None,
                              font_size=10.5):
     """Layered architecture diagram built from table boxes (v1: no connectors).
 
@@ -814,6 +815,15 @@ def add_layered_architecture(doc, layers, width_cm=14, col_widths=None,
         remaining lines are plain centered content lines.
       - list[list[str]]: row of parallel boxes. Each inner list is one box
         (lines[0] bold layer name, rest plain lines).
+
+    Total width has ONE source for the whole diagram, resolved once here and
+    handed to every layer, so all boxes in the figure are exactly as wide as
+    each other:
+
+      - `col_widths` given → its SUM is the diagram width (the full-width
+        layers take that same total, the parallel row uses the split as is);
+      - only `width_cm` given → that is the width; the parallel row splits it
+        evenly.
 
     A small spacer paragraph is inserted between layers (prevents Word from
     merging adjacent tables). Connector lines/arrows are intentionally
@@ -830,14 +840,21 @@ def add_layered_architecture(doc, layers, width_cm=14, col_widths=None,
             ], col_widths=[4, 4, 6])
 
         (a 2-string list is a full-width box; a list of lists is a parallel row)
+
+        width_cm: total width of the diagram in cm (default TABLE_WIDTH_CM),
+            ignored when `col_widths` is given.
+        col_widths: column widths of the parallel row in cm; their sum defines
+            the diagram's total width.
+        font_size: box font size in pt (default 10.5).
     """
+    total_cm = round(sum(col_widths), 3) if col_widths else width_cm
     for idx, layer in enumerate(layers):
         if idx > 0:
             _add_layer_spacer(doc)
         if layer and isinstance(layer[0], (list, tuple)):
-            _add_arch_parallel(doc, layer, width_cm, col_widths, font_size)
+            _add_arch_parallel(doc, layer, total_cm, col_widths, font_size)
         else:
-            _add_arch_box(doc, layer, width_cm, font_size)
+            _add_arch_box(doc, layer, total_cm, font_size)
 
 
 # ============================================================
@@ -1145,8 +1162,8 @@ def add_toc(doc, title='目  录', levels='1-2', auto_update=True):
 def setup_document():
     """Create a Document with page setup from the active preset.
 
-    Reads the 'page' section (margins, header/footer distance) and the
-    'body' section (Normal default font) of the active preset. Call
+    Reads the 'page' section (paper size, margins, header/footer distance)
+    and the 'body' section (Normal default font) of the active preset. Call
     set_preset() before this function when switching presets.
     Also resets figure/table counters so each document starts from 图1/表1.
     """
@@ -1163,6 +1180,8 @@ def setup_document():
 
     pg = _ACTIVE_PRESET['page']
     for section in doc.sections:
+        section.page_width = Cm(pg['page_width'])
+        section.page_height = Cm(pg['page_height'])
         section.top_margin = Cm(pg['margin_top'])
         section.bottom_margin = Cm(pg['margin_bottom'])
         section.left_margin = Cm(pg['margin_left'])
@@ -1241,7 +1260,7 @@ def main():
         ("模块A", "描述A"),
         ("模块B", "描述B"),
         ("模块C", "描述C"),
-    ], col_width_cm=[5, 5, 5], font_size=9)
+    ], col_width_cm=[4, 4, 4], font_size=9)
     add_arrow_down(doc)
     add_box(doc, "第三层（描述内容）", width_cm=12, font_size=10)
     add_fig_caption(doc, "图1 系统架构图")

@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 """将 README 渲染为 docx，特有结构以原生形式呈现"""
 import sys, os
-BASE = os.path.dirname(os.path.abspath(__file__))
-sys.path.insert(0, BASE)
+ROOT = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, os.path.join(ROOT, 'scripts'))
 
 from build_docx import (setup_document, add_title, add_toc, add_h1, add_h2,
     add_body, add_item_para, add_eq_para, add_body_with_math, add_code_block,
@@ -233,7 +233,7 @@ add_data_table(doc,
 
 # ============ 八、分层架构图 ============
 add_h1(doc, "九、分层架构图")
-add_body(doc, "add_layered_architecture 以表格框图堆叠表达多层架构，全宽层与并列层可混合使用，层间自动插入间隔段落。全宽层与并列层的每个框首行均为加粗名称，col_widths 控制并列框列宽，不传则按默认总宽 14cm 均分。以信号处理系统为例：")
+add_body(doc, "add_layered_architecture 以表格框图堆叠表达多层架构，全宽层与并列层可混合使用，层间自动插入间隔段落。全宽层与并列层的每个框首行均为加粗名称。整图总宽只有一个来源：传 col_widths 时其和即总宽，全宽层与并列层共用同一个总宽（上下框体必然等宽）；只传 width_cm（默认 14cm）时它即总宽，并列层按总宽均分。以信号处理系统为例：")
 add_layered_architecture(doc, [
     ["采集层：传感器阵列 / 信号调理 / 抗混叠滤波"],
     ["预处理层：去直流 / 滤波 / 加窗"],
@@ -382,6 +382,6 @@ add_link_para(doc, [
     ("text", "。"),
 ])
 
-out = os.path.join(os.path.dirname(BASE), "README.docx")
+out = os.path.join(ROOT, "README.docx")
 doc.save(out)
 print("saved:", out)
