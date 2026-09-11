@@ -388,7 +388,8 @@ def add_code_block(doc, code, font_size=9):
         shd.set(qn('w:val'), 'clear')
         shd.set(qn('w:color'), 'auto')
         shd.set(qn('w:fill'), 'F2F2F2')
-        p._p.get_or_add_pPr().append(shd)
+        p._p.get_or_add_pPr().insert_element_before(
+            shd, 'w:tabs', 'w:spacing', 'w:ind', 'w:jc')
         run = p.add_run(line if line.strip() else " ")
         run.font.name = 'Consolas'
         run.font.size = Pt(font_size)
@@ -469,7 +470,8 @@ def set_table_border(table):
             qn('w:color'): '000000'
         })
         borders.append(border)
-    tblPr.append(borders)
+    tblPr.insert_element_before(
+        borders, 'w:shd', 'w:tblLayout', 'w:tblCellMar', 'w:tblLook')
 
 
 def set_table_border_no_insideV(table):
@@ -494,7 +496,8 @@ def set_table_border_no_insideV(table):
         border.set(qn('w:space'), '0')
         border.set(qn('w:color'), 'auto')
         borders.append(border)
-    tblPr.append(borders)
+    tblPr.insert_element_before(
+        borders, 'w:shd', 'w:tblLayout', 'w:tblCellMar', 'w:tblLook')
 
 
 def set_cell_shading(cell, color_hex):
@@ -504,7 +507,9 @@ def set_cell_shading(cell, color_hex):
         qn('w:color'): 'auto',
         qn('w:fill'): color_hex,
     })
-    cell._element.get_or_add_tcPr().append(shading)
+    cell._element.get_or_add_tcPr().insert_element_before(
+        shading, 'w:noWrap', 'w:tcMar', 'w:textDirection', 'w:tcFitText',
+        'w:vAlign', 'w:hideMark')
 
 
 # ============================================================
@@ -516,10 +521,12 @@ def _set_cell_margins(cell, margin_dxa=80):
     tc = cell._element
     tcPr = tc.get_or_add_tcPr()
     tcMar = tcPr.makeelement(qn('w:tcMar'), {})
-    for side in ['top', 'bottom', 'left', 'right']:
+    # CT_TcMar order: top, start, left, bottom, end, right
+    for side in ['top', 'left', 'bottom', 'right']:
         mar = tcMar.makeelement(qn(f'w:{side}'), {qn('w:w'): str(margin_dxa), qn('w:type'): 'dxa'})
         tcMar.append(mar)
-    tcPr.append(tcMar)
+    tcPr.insert_element_before(
+        tcMar, 'w:textDirection', 'w:tcFitText', 'w:vAlign', 'w:hideMark')
 
 
 def add_box(doc, text, width_cm=14, font_size=10.5, bold=True):
@@ -635,11 +642,8 @@ def add_arrow_horizontal(doc, text='\u2192'):
 
 def _set_table_fixed_layout(table):
     """Lock table to fixed column widths (prevents Word autofit from reflowing)."""
-    tblPr = table._element.tblPr
-    layout = tblPr.find(qn('w:tblLayout'))
-    if layout is None:
-        layout = OxmlElement('w:tblLayout')
-        tblPr.append(layout)
+    # python-docx ordered setter: inserts before w:tblLook automatically
+    layout = table._element.tblPr.get_or_add_tblLayout()
     layout.set(qn('w:type'), 'fixed')
 
 
@@ -1021,7 +1025,43 @@ def _setup_toc_styles(doc):
         pf.line_spacing = Pt(t['line_spacing'])
 
 
-def add_toc(doc, title='目  录', levels='1-2'):
+# CT_Settings is an xsd:sequence — w:updateFields must sit between
+# w:alwaysMergeEmptyNamespace and w:hdrShapeDefaults. python-docx emits
+# w:compat right after w:savePreviewPicture, so inserting before the first
+# successor element present keeps the element order schema-valid.
+_UPDATE_FIELDS_SUCCESSORS = (
+    'hdrShapeDefaults', 'footnotePr', 'endnotePr', 'compat', 'docVars',
+    'rsids', 'mathPr', 'attachedSchema', 'themeFontLang', 'clrSchemeMapping',
+    'doNotIncludeSubdocsInStats', 'doNotAutoCompressPictures', 'forceUpgrade',
+    'captions', 'readModeInkLockDown', 'smartTagType', 'schemaLibrary',
+    'shapeDefaults', 'doNotEmbedSmartTags', 'decimalSymbol', 'listSeparator',
+)
+
+
+def _enable_update_fields_on_open(doc):
+    """Write <w:updateFields w:val="true"/> into word/settings.xml.
+
+    Applications that support field calculation (e.g. Word) recalculate all
+    fields when the document opens, so TOC entries are generated without a
+    manual right-click. Word asks for confirmation on open.
+
+    Idempotent — inserting twice leaves a single element.
+    """
+    settings_el = doc.settings.element
+    if settings_el.find(qn('w:updateFields')) is not None:
+        return
+
+    update_fields = OxmlElement('w:updateFields')
+    update_fields.set(qn('w:val'), 'true')
+
+    for child in settings_el:
+        if child.tag.split('}')[-1] in _UPDATE_FIELDS_SUCCESSORS:
+            child.addprevious(update_fields)
+            return
+    settings_el.append(update_fields)
+
+
+def add_toc(doc, title='目  录', levels='1-2', auto_update=True):
     """Insert a Word Table of Contents field (TOC). On-demand only.
 
     Formatting:
@@ -1032,12 +1072,21 @@ def add_toc(doc, title='目  录', levels='1-2'):
       - Line spacing: 固定22磅
       - Levels: default '1-2' (H1 + H2 only)
 
-    After opening in Word, right-click the TOC area and select "更新域" to generate.
+    Field update:
+      - auto_update=True (default): writes <w:updateFields w:val="true"/> into
+        word/settings.xml. Word prompts to update fields when the document
+        opens; accepting generates the TOC entries.
+      - auto_update=False: the TOC field updates only on demand — right-click
+        the TOC area in Word and select "更新域".
 
     Args:
         title: TOC title text (default '目  录').
         levels: heading levels to include, e.g. '1-2' for H1+H2 only.
+        auto_update: request a field update when the document is opened.
     """
+    if auto_update:
+        _enable_update_fields_on_open(doc)
+
     # Pre-configure TOC entry styles
     _setup_toc_styles(doc)
 
@@ -1103,6 +1152,15 @@ def setup_document():
     """
     reset_counters()
     doc = Document()
+
+    # The python-docx default template emits <w:zoom w:val="bestFit"/> without
+    # w:percent, which its schema copy marks as required. Write a cached 100%
+    # so the settings part validates; w:val still governs the zoom type, and
+    # the spec treats percent as ignored whenever w:val is not "none".
+    zoom = doc.settings.element.find(qn('w:zoom'))
+    if zoom is not None and zoom.get(qn('w:percent')) is None:
+        zoom.set(qn('w:percent'), '100')
+
     pg = _ACTIVE_PRESET['page']
     for section in doc.sections:
         section.top_margin = Cm(pg['margin_top'])

@@ -164,7 +164,7 @@ skill 根目录（SKILL.md 所在目录）/
 | `reset_counters()`                                                                                  | 重置图表计数器为零（由 `setup_document()` 自动调用）                                                                           |
 | `add_note(doc, text)`                                                                               | 居中斜体注释（9pt），位于图下方                                                                                           |
 | `add_bibliography(doc, entries, title='参考文献')`                                                  | 参考文献表：黑体三号居中标题（Heading 1，进入目录）+ GB/T 7714-2015 顺序编码制条目，宋体五号，悬挂缩进，[n] 自动编号与正文引用上标对应 |
-| `add_toc(doc, title, levels)`                                                                       | **按需**目录（黑体三号居中标题 + TOC域，levels '1-2'）                                                                         |
+| `add_toc(doc, title, levels, auto_update)`                                                          | **按需**目录（黑体三号居中标题 + TOC域，levels '1-2'；`auto_update` 默认 `True`，见「目录（TOC）」一节）                                  |
 | `set_table_border(table)`                                                                           | 设置所有边框为单线黑色                                                                                                    |
 | `set_cell_shading(cell, color_hex)`                                                                 | 设置单元格背景色（如 'D9D9D9' 灰色）                                                                                        |
 | `safe_extract(zf, dest)`                                                                            | 安全解压 .docx ZIP 包，防止路径遍历和符号链接攻击（可选功能用）                                                                          |
@@ -204,7 +204,7 @@ skill 根目录（SKILL.md 所在目录）/
 5. **3.1 / 3.2**：作为二级标题处理，使用 `add_h2`
 6. **正文中的** **`**bold**`**：`add_body` 自动解析加粗标记
 7. **正文中的** **`[n]`** **引用**：`add_body` 自动渲染为上标
-8. **Word 目录（TOC）支持**：`add_h1`/`add_h2`/`add_h3` 使用 Word 内置 Heading 样式。使用 `add_toc` 按需插入目录域（TOC field），在 Word 中右键"更新域"生成目录条目。`add_title` 不使用 Heading 样式，不进入目录
+8. **Word 目录（TOC）支持**：`add_h1`/`add_h2`/`add_h3` 使用 Word 内置 Heading 样式。使用 `add_toc` 按需插入目录域（TOC field），Word 打开文档时提示更新域，选择"是"即生成目录条目。`add_title` 不使用 Heading 样式，不进入目录
 9. **标题颜色为黑色**：Word 内置 Heading 样式默认为蓝色，所有标题函数已显式覆盖为黑色（`RGBColor(0,0,0)`），确保标题显示为黑色而非蓝色
 10. **图表自动编号**：`add_fig_caption` 和 `add_table_caption` 自动递增编号（图N / 表N），无需手动填写编号。传空字符串 `""` 给 `add_fig_caption` 可生成纯间距段落（不编号）。图标题在图**下方**，表标题在表**上方**
 
@@ -391,24 +391,28 @@ add_fig_caption(doc, "模型训练与部署流程图")
 
 1. **标题样式**：`add_h1` 和 `add_h2` 使用 Word 内置 Heading 1/2 样式，TOC 域可识别
 2. **目录条目样式**：TOC 1 和 TOC 2 样式按上述格式预定义：`_setup_toc_styles(doc)` 在 `add_toc()` 内部调用，配置 TOC 1/TOC 2 样式
-3. **域生成**：目录是 Word 域（`TOC \o "1-2" \h \z \u`）。在 Word 中打开后，右键目录区域 → "更新域"生成条目
+3. **域生成**：目录是 Word 域（`TOC \o "1-2" \h \z \u`）。条目由 Word 在更新域时计算生成，生成前显示占位文字
 4. **层级**：默认 `'1-2'` 仅包含 H1 和 H2 标题
+5. **打开时更新**：默认 `auto_update=True`，在 `word/settings.xml` 写入 `w:updateFields` 开关，Word 打开文档时提示更新域，确认后生成目录条目；`auto_update=False` 不写入该开关，仅在目录上右键 → "更新域"时手动生成
 
 ### 用法
 
 ```python
 doc = setup_document()
 add_title(doc, "文档标题")
-add_toc(doc)                    # 在标题后、正文前插入目录
+add_toc(doc)                    # 默认：Word 打开时提示更新域，选"是"生成条目
+# add_toc(doc, auto_update=False)  # 改为完全手动：仅右键"更新域"时生成条目
 add_h1(doc, "一、概述")
 add_body(doc, "正文内容...")
 ```
 
 ### 注意事项
 
-- 目录条目在用户于 Word 中更新域之前不会显示（右键 → "更新域"）
+- Word 打开文档时提示"是否更新此文档中的域"：选择"是"生成目录条目；选择"否"则保留占位文字，可随时在目录上右键 → "更新域"手动生成
 
 - 更新前显示占位文字"（请在 Word 中右键此处选择"更新域"以生成目录）"
+
+- 打开时更新由 `auto_update` 参数控制（默认开启），设为 `False` 后目录仅能手动更新
 
 - `add_title` 不使用 Heading 样式，文档主标题不会出现在目录中
 
