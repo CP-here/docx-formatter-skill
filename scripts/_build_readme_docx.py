@@ -8,8 +8,45 @@ from build_docx import (setup_document, add_title, add_toc, add_h1, add_h2,
     add_body, add_item_para, add_eq_para, add_body_with_math, add_code_block,
     add_data_table, add_math_to_cell, add_box, add_multi_line_box,
     add_arrow_down, add_arrow_row, add_separator_note, add_fig_caption,
-    add_table_caption, add_layered_architecture, add_note, add_bibliography)
+    add_table_caption, add_layered_architecture, add_note, add_bibliography,
+    set_run_font)
 from mathHelpers import r, sub, sup, frac, sumOp, func, math, inlineMath
+
+from docx.shared import Pt, RGBColor
+from docx.enum.text import WD_ALIGN_PARAGRAPH
+from docx.oxml.ns import qn
+from docx.oxml import OxmlElement
+from docx.opc.constants import RELATIONSHIP_TYPE as RT
+
+
+def add_link_para(doc, parts):
+    """正文格式段落，支持内联外部超链接。
+
+    parts: ("text", str) 纯文本 | ("link", url, text) 超链接。
+    格式对齐默认正文预设（宋体 12pt / 1.5 倍行距 / 首行缩进 2 字符 / 中西文分离）。
+    """
+    p = doc.add_paragraph()
+    p.alignment = WD_ALIGN_PARAGRAPH.JUSTIFY
+    pf = p.paragraph_format
+    pf.line_spacing = 1.5
+    pf.first_line_indent = Pt(24)
+    for part in parts:
+        if part[0] == "link":
+            _, url, text = part
+            run = p.add_run(text)
+            set_run_font(run, '宋体', 12, west_font='Times New Roman')
+            run.font.color.rgb = RGBColor(0x05, 0x63, 0xC1)
+            run.font.underline = True
+            r_id = p.part.relate_to(url, RT.HYPERLINK, is_external=True)
+            hyperlink = OxmlElement('w:hyperlink')
+            hyperlink.set(qn('r:id'), r_id)
+            p._p.append(hyperlink)
+            hyperlink.append(run._element)
+        else:
+            run = p.add_run(part[1])
+            set_run_font(run, '宋体', 12, west_font='Times New Roman')
+    return p
+
 
 doc = setup_document()
 add_title(doc, "docx-formatter 中文 Word 专业排版技能")
@@ -17,13 +54,13 @@ add_toc(doc)
 
 # ============ 一、项目简介 ============
 add_h1(doc, "一、项目简介")
-add_body(doc, "docx-formatter 生成专业排版的中文 Word 文档，覆盖章节结构、正文、数学公式、表格、流程图、目录、引用上标与文档验证的完整排版链路，输出符合学术与工程规范的 .docx 文件。排版效果可参考仓库中的 example.docx。")
+add_body(doc, "docx-formatter 生成专业排版的中文 Word 文档，覆盖章节结构、正文、数学公式、表格、流程图、目录、引用上标与文档验证的完整排版链路，输出符合学术与工程规范的 .docx 文件。排版效果可参考仓库中的 README.docx。")
 add_body(doc, "技能采用单引擎架构，仅依赖 Python 3.8 以上版本与 python-docx。数学公式由 mathHelpers.py 直接生成 OMML XML，即 Word 原生公式格式，公式在 Word 中可二次编辑，无需 Node.js 或任何外部转换工具。")
 add_body(doc, "本文档即由该技能自身排版生成：文中所有公式为 Word 原生可编辑公式，流程图与架构图为表格框图，引用标记为真实上标，可作为排版效果的直接样例。")
 
 # ============ 二、功能矩阵 ============
 add_h1(doc, "二、功能矩阵")
-add_body(doc, "技能共包含 18 个模块，其中 14 个默认启用，4 个为可选模块，仅在明确要求时启用。")
+add_body(doc, "技能共包含 19 个模块，其中 13 个默认启用，1 个按需生成，5 个为可选模块，仅在明确要求时启用。")
 add_table_caption(doc, "功能矩阵总览")
 add_data_table(doc,
     ["模块", "默认状态", "说明"],
@@ -32,6 +69,7 @@ add_data_table(doc,
         ("排版预设", "启用", "整套切换排版参数，支持中西文字体分离"),
         ("OMML 数学公式", "启用", "行内与块级公式，Word 原生可编辑"),
         ("引用上标", "启用", "参考文献标记自动渲染为上标"),
+        ("参考文献列表", "启用", "GB/T 7714-2015 顺序编码制文献表"),
         ("表格框图流程图", "启用", "表格与 Unicode 箭头构建流程图"),
         ("分层架构图", "启用", "多层架构的表格框图堆叠"),
         ("图表自动编号", "启用", "图表标题自动递增编号"),
@@ -51,7 +89,7 @@ add_data_table(doc,
 
 # ============ 三、标准排版 ============
 add_h1(doc, "三、标准排版")
-add_body(doc, "标题使用黑体，正文使用宋体。文档标题一号 26pt 居中加粗，一级标题三号 16pt 左对齐，二级与三级标题小四 12pt。正文小四 12pt 两端对齐，首行缩进 2 字符，全文 1.5 倍行距。纸张为 A4，页边距上下 2.54cm、左右 3.18cm，页脚居中页码为五号 Times New Roman。各级标题颜色显式覆盖为黑色，规避 Word 内置 Heading 样式的默认蓝色。中西文字体分离：正文西文用 Times New Roman 衬线体，标题西文用 Arial 无衬线体。本文档各级标题与正文即为标准排版的实际效果。")
+add_body(doc, "标题使用黑体，正文使用宋体。文档标题一号 26pt 居中加粗，一级标题三号 16pt 左对齐，二级与三级标题小四 12pt。正文小四 12pt 两端对齐，首行缩进 2 字符，全文 1.5 倍行距。纸张为 A4，页边距上下 2.54cm、左右 3.18cm，页脚居中页码为五号 Times New Roman。各级标题颜色显式覆盖为黑色，规避 Word 内置 Heading 样式的默认蓝色。中西文字体分离：正文西文用 Times New Roman 衬线体，标题西文用 Arial 无衬线体，对齐 NJUThesis 的字体族设计。本文档各级标题与正文即为标准排版的实际效果。")
 add_table_caption(doc, "标准排版构件函数")
 add_data_table(doc,
     ["函数", "用途"],
@@ -134,11 +172,21 @@ add_eq_para(doc, math([
 add_fig_caption(doc, "似然比检测损失的嵌套公式")
 
 add_h2(doc, "5.4 希腊字母与数学符号")
-add_body(doc, "希腊字母与数学符号以 Unicode 直接书写，formulas.py 内置若干常用公式模板，可直接插入文档，也可作为自定义公式的参考模式。求和符号必须使用 sumOp 构建：求和若采用 n 元运算符加空上标的写法，Word 会渲染一个不可见的上标占位框，导致文件看起来损坏；sumOp 改用下标结构配合 Unicode ∑ 实现，彻底规避该问题。所有接收子元素的函数内部自动展平嵌套列表，防止 XML 拼接错误。")
+add_body(doc, "formulas.py 内置若干常用公式模板，可直接插入文档，也可作为自定义公式的参考模式。希腊字母与数学符号以 Unicode 直接书写，如 λ、τ、α、β、∑、×、·、∈。")
+add_body(doc, "求和符号必须使用 sumOp 构建。求和若采用 n 元运算符加空上标的写法，Word 会渲染一个不可见的上标占位框，导致文件看起来损坏；sumOp 改用下标结构配合 Unicode ∑ 实现，彻底规避该问题。所有接收子元素的函数内部自动展平嵌套列表，防止 XML 拼接错误。")
 
 # ============ 六、引用上标 ============
 add_h1(doc, "六、引用上标")
-add_body(doc, "正文中的参考文献标记自动渲染为上标，适用于 add_body 与 add_item_para，支持单个引用、多个引用与范围引用三种格式。本段即为实际渲染效果：傅里叶分析方法在信号处理任务中表现出色[1]，后续研究[2,3]进一步验证了这一结论，系统综述见[1-3]。")
+add_body(doc, "正文中的参考文献标记自动渲染为上标，适用于 add_body 与 add_item_para，支持三种格式：")
+add_data_table(doc,
+    ["格式", "示例"],
+    [
+        ("单个引用", "[1]"),
+        ("多个引用", "[1,2] 或 [1, 2]"),
+        ("范围引用", "[1-3]"),
+    ],
+    col_widths=[3.5, 6.5], font_size=9.5)
+add_body(doc, "本段即为实际渲染效果：傅里叶分析方法在信号处理任务中表现出色[1]，后续研究[2,3]进一步验证了这一结论，系统综述见[1-3]。")
 
 # ============ 七、参考文献列表 ============
 add_h1(doc, "七、参考文献列表")
@@ -152,6 +200,7 @@ add_bibliography(doc, [
     "Zhang W, Liu H. Window function selection for spectral leakage suppression[C]//Proceedings of the International Conference on Signal Processing. Beijing: IEEE, 2021: 45-52",
     "全国信息与文献标准化技术委员会. 信息与文献 参考文献著录规则: GB/T 7714-2015[S]. 北京: 中国标准出版社, 2015",
 ])
+add_body(doc, '条目按文献类型组织，传入时不带序号：期刊以 [J] 标注，图书 [M]，会议论文 [C]，学位论文 [D]，标准 [S]，电子资源 [EB/OL] 并附更新日期与访问路径。多作者用逗号分隔，三位以上作者取前三名加“等”或"et al"。章节标题默认为“参考文献”，可通过 title 参数自定义。')
 
 # ============ 八、表格框图流程图 ============
 add_h1(doc, "八、表格框图流程图")
@@ -168,7 +217,7 @@ add_separator_note(doc, "----- 信号预处理止于此处，后续由分类器�
 add_arrow_down(doc)
 add_box(doc, "分类决策：特征归一化 / 模式匹配 / 结果输出")
 add_fig_caption(doc, "信号处理与分类流程图")
-add_body(doc, "横向箭头行是本技能的特色构件。采用 3 列表格实现，左右等宽并锁定固定布局，箭头恒位于整表几何中心，与两侧文字长短无关；中间竖线融合后左右单元格视觉连通。左右地位相等时不加底纹，层级不同时左灰右白，上图中前两步地位相等为全白，后两步表达从预处理阶段到变换阶段的层级转换。")
+add_body(doc, "横向箭头行是本技能的特色构件。采用 3 列表格实现，左右等宽并锁定固定布局，箭头恒位于整表几何中心，与两侧文字长短无关；中间竖线融合后左右单元格视觉连通。左右地位相等时不加底纹，层级不同时可传 left_shade 参数生成左灰右白效果，用于表达预处理阶段向决策阶段一类的层级转换。")
 add_table_caption(doc, "流程图构件函数")
 add_data_table(doc,
     ["函数", "用途"],
@@ -207,7 +256,7 @@ add_code_block(doc, "python validate_docx.py output.docx --verbose")
 add_h2(doc, "11.2 数据表")
 add_body(doc, "add_data_table 生成数据型表格，灰色表头黑体加粗居中，固定列宽，数据行末列左对齐、其余列居中。本文档中各表均为实际渲染效果。")
 add_h2(doc, "11.3 单元格公式")
-add_body(doc, "add_math_to_cell 向表格单元格插入行内 OMML 公式，适用于构建函数与渲染效果对照一类的场景，下表第三列为单元格内原生公式：")
+add_body(doc, "add_math_to_cell 向表格单元格插入行内 OMML 公式，适用于函数调用与渲染效果对照一类的场景，下表第三列为单元格内原生公式：")
 add_table_caption(doc, "公式构建函数与渲染效果对照")
 t = add_data_table(doc,
     ["构建函数", "调用形式", "渲染效果"],
@@ -226,11 +275,11 @@ add_body(doc, "辅助函数 set_table_border 与 set_cell_shading 分别控制�
 
 # ============ 十二、目录生成 ============
 add_h1(doc, "十二、目录生成")
-add_body(doc, "目录按需生成，默认不插入。标题函数使用 Word 内置 Heading 样式，add_toc 在文档标题后、正文前插入目录域，在 Word 中按住 Ctrl 并点击条目可跳转至对应标题。目录标题黑体三号居中，一级条目黑体四号，二级条目宋体小四，行距固定 22pt，样式对齐 NJUThesis 模板。默认层级为 1 到 2 级，文档主标题不进入目录。目录条目默认在 Word 打开文档时提示更新域并生成，由文档设置中的 w:updateFields 开关实现；传入 auto_update=False 可关闭该行为，改为在目录上右键选择更新域手动生成。目录后自动分页。本文档开头的目录即为实际效果。")
+add_body(doc, '目录按需生成，默认不插入。标题函数使用 Word 内置 Heading 样式，add_toc 在文档标题后、正文前插入目录域，在 Word 中按住 Ctrl 并点击条目可跳转至对应标题。Word 打开文档时提示更新域，选择"是"即生成目录条目。目录标题黑体三号居中，一级条目黑体四号，二级条目宋体小四，行距固定 22pt，样式对齐 NJUThesis 模板。默认层级为 1 到 2 级，文档主标题不进入目录。目录条目默认在 Word 打开文档时提示更新域并生成，由文档设置中的 w:updateFields 开关实现；传入 auto_update=False 可关闭该行为，改为在目录上右键选择更新域手动生成。目录后自动分页。本文档开头的目录即为实际效果。')
 
 # ============ 十三、轻量文档验证 ============
 add_h1(doc, "十三、轻量文档验证")
-add_body(doc, "validate_docx.py 基于纯 Python 标准库实现，无外部依赖，在文档生成后执行 5 项结构检查，全部通过时退出码为 0，否则为 1：")
+add_body(doc, "validate_docx.py 基于纯 Python 标准库实现，无外部依赖，在文档生成后执行 5 项结构检查，全部检查通过时退出码为 0，否则为 1：")
 add_table_caption(doc, "轻量验证检查项")
 add_data_table(doc,
     ["检查项", "说明"],
@@ -264,7 +313,7 @@ add_body(doc, "accept_changes.py 通过 LibreOffice 宏接受文档中的所有�
 
 # ============ 排版标准 ============
 add_h1(doc, "十六、排版标准")
-add_body(doc, "页面为 A4 纸张，页边距上下 2.54cm、左右 3.18cm，正文行距 1.5 倍。页脚居中放置页码，五号 Times New Roman，由 PAGE 域自动编号。中西文字体分离：正文西文用 Times New Roman 衬线体，标题西文用 Arial 无衬线体。间距体系对齐 NJUThesis LaTeX 模板与北京大学研究生学位论文写作指南，NJUThesis 全局行距倍数为 1.625，与 Word 1.5 倍行距的视觉效果一致。")
+add_body(doc, "页面为 A4 纸张，页边距上下 2.54cm、左右 3.18cm，正文行距 1.5 倍。页脚居中放置页码，五号 Times New Roman，由 PAGE 域自动编号。中西文字体分离：正文西文用 Times New Roman 衬线体，标题西文用 Arial 无衬线体。间距体系对齐 NJUThesis LaTeX 模板，该模板全局行距倍数为 1.625，与 Word 1.5 倍行距的视觉效果一致。")
 add_table_caption(doc, "排版标准")
 add_data_table(doc,
     ["元素", "字体", "字号", "样式", "段前", "段后"],
@@ -320,7 +369,18 @@ add_body(doc, "安装后在对话中直接描述需求即可触发技能，例�
 add_h1(doc, "二十、许可证")
 add_body(doc, "本项目可自由使用和修改。")
 add_h1(doc, "二十一、致谢")
-add_body(doc, "排版部分标准对齐 NJUThesis LaTeX 模板，部分对齐北京大学研究生学位论文写作指南；可选功能参考 Anthropic 官方 docx 技能。")
+add_link_para(doc, [
+    ("text", "排版部分标准对齐 "),
+    ("link", "https://github.com/nju-lug/NJUThesis", "NJUThesis"),
+    ("text", " LaTeX 模板，部分对齐"),
+    ("link", "https://grs.pku.edu.cn/docs/2019-03/20190304101034750506.pdf", "北京大学研究生学位论文写作指南"),
+    ("text", "。"),
+])
+add_link_para(doc, [
+    ("text", "可选功能参考 "),
+    ("link", "https://github.com/anthropics/skills/tree/main/skills/docx", "Anthropic 官方 docx 技能"),
+    ("text", "。"),
+])
 
 out = os.path.join(os.path.dirname(BASE), "README.docx")
 doc.save(out)
