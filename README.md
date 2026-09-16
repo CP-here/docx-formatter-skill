@@ -454,5 +454,5 @@ docx-formatter/
 
 ## 致谢
 
-- 排版部分标准对齐 [NJUThesis](https://github.com/nju-lug/NJUThesis) LaTeX 模板，部分对齐[北京大学研究生学位论文写作指南](https://grs.pku.edu.cn/docs/2019-03/20190304101034750506.pdf)
+- 排版部分参考 [NJUThesis](https://github.com/nju-lug/NJUThesis) LaTeX 模板，部分参考[北京大学研究生学位论文写作指南](https://grs.pku.edu.cn/docs/2019-03/20190304101034750506.pdf)
 - 可选功能参考 [Anthropic 官方 docx 技能](https://github.com/anthropics/skills/tree/main/skills/docx)
