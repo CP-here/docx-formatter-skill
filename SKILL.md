@@ -347,9 +347,9 @@ add_multi_col_table(doc, ["方法A", "方法B"])
 
 ### 适用场景
 
-- "过程 → 产出"步骤（如 `① 数据采集 → 原始数据集`）
+- "过程 → 产出"步骤（如 `① 时域采样 → 离散信号 x(n)`）
 
-- 需要用底纹区分层级的流程图（如数据层 → 模型层，左灰右白）
+- 需要用底纹区分层级的流程图（如预处理层 → 决策层，左灰右白）
 
 - 任何需要横向箭头连接不同长度文字框的流程图
 
@@ -358,22 +358,22 @@ add_multi_col_table(doc, ["方法A", "方法B"])
 以下示例展示两种底纹模式：前两步地位相等（全白），后两步层级转换（左灰右白）。
 
 ```python
-# 前两步：同属数据层，地位相等 → 全白
-add_arrow_row(doc, "① 数据采集", "原始数据集")
+# 前两步：同属预处理层级，地位相等 → 全白
+add_arrow_row(doc, "① 时域采样", "离散信号 x(n)")
 add_arrow_down(doc)
-add_arrow_row(doc, "② 数据标注", "标注数据集")
-add_arrow_down(doc)
-
-# 后两步：从数据层进入模型层，层级不一 → 左灰右白
-add_arrow_row(doc, "③ 模型训练", "预测模型", left_shade='D9D9D9')
-add_arrow_down(doc)
-add_arrow_row(doc, "④ 模型部署", "推理服务", left_shade='D9D9D9')
+add_arrow_row(doc, "② 加窗处理", "加窗信号")
 add_arrow_down(doc)
 
-add_separator_note(doc, "----- 离线训练止于此处，后续由在线服务承接 -----")
+# 后两步：从预处理层进入决策层，层级不一 → 左灰右白
+add_arrow_row(doc, "③ 离散傅里叶变换", "频谱 X(k)", left_shade='D9D9D9')
 add_arrow_down(doc)
-add_box(doc, "API 网关 + 业务系统：请求路由 / 负载均衡 / 结果返回 / 监控告警")
-add_fig_caption(doc, "模型训练与部署流程图")
+add_arrow_row(doc, "④ 频谱分析", "特征向量", left_shade='D9D9D9')
+add_arrow_down(doc)
+
+add_separator_note(doc, "----- 信号预处理止于此处，后续由分类器承接 -----")
+add_arrow_down(doc)
+add_box(doc, "分类决策：特征归一化 / 模式匹配 / 结果输出")
+add_fig_caption(doc, "信号处理与分类流程图")
 ```
 
 ### 实现原理

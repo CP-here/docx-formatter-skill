@@ -777,9 +777,9 @@ def add_arrow_row(doc, left_text, right_text, total_cm=TABLE_WIDTH_CM, arrow_cm=
 
 
 def add_separator_note(doc, text):
-    """Centered dashed separator line with note text (e.g. '----- AI 介入止于此处 -----').
+    """Centered dashed separator line with note text (e.g. '----- 预处理止于此处 -----').
 
-    Used in flowcharts to mark a boundary between AI and existing systems.
+    Used in flowcharts to mark the boundary between two stages.
     """
     p = doc.add_paragraph()
     p.alignment = WD_ALIGN_PARAGRAPH.CENTER
