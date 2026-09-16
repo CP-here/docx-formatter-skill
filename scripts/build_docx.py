@@ -873,11 +873,12 @@ def add_layered_architecture(doc, layers, width_cm=TABLE_WIDTH_CM, col_widths=No
         layers: list of layers, top to bottom. Example::
 
             add_layered_architecture(doc, [
-                ["应用层（前端 · B/S）", "菜单栏 / 数据上传 / 参数配置"],
-                [["预处理模块", "高清栅格化"],
-                 ["配置模块", "参数模板库"]],
-                ["数据接入层：上传 → 校验 → 归档"],
-            ], col_widths=[4, 4, 6])
+                ["采集层：传感器阵列 / 信号调理 / 抗混叠滤波"],
+                ["预处理层：去直流 / 滤波 / 加窗"],
+                [["变换模块", "快速傅里叶变换"],
+                 ["分析模块", "频带能量 / 谱质心"]],
+                ["应用层：频谱显示 / 报告输出"],
+            ], col_widths=[4, 5, 5])
 
         (a 2-string list is a full-width box; a list of lists is a parallel row)
 

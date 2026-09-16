@@ -140,12 +140,12 @@ add_bibliography 生成 GB/T 7714-2015 顺序编码制参考文献表，格式�
 
 ```python
 add_bibliography(doc, [
-    "程佩青. 数字信号处理教程[M]. 4版. 北京: 清华大学出版社, 2015",
-    "陈大明, 刘思远. 基于加窗傅里叶变换的谐波检测方法[J]. 信号处理学报, 2023, 41(2): 115-128",
-    "Oppenheim A V, Willsky A S, Nawab S H. Signals and Systems[M]. 2nd ed. Upper Saddle River: Prentice Hall, 1997",
-    "周文静. 短时傅里叶变换在振动信号分析中的应用[D]. 南京: 东南大学, 2021",
-    "Zhang W, Liu H. Window function selection for spectral leakage suppression[C]//Proceedings of the International Conference on Signal Processing. Beijing: IEEE, 2021: 45-52",
-    "全国信息与文献标准化技术委员会. 信息与文献 参考文献著录规则: GB/T 7714-2015[S]. 北京: 中国标准出版社, 2015",
+    "张三, 李四. 示例期刊论文题名[J]. 示例期刊, 2020, 12(3): 45-56",
+    "王五. 示例图书题名[M]. 示例市: 示例出版社, 2019",
+    "赵六. 示例学位论文题名[D]. 示例市: 示例大学, 2021",
+    "钱七. 示例会议论文题名[C]//示例会议论文集. 示例市: 示例出版社, 2022: 78-85",
+    "示例标准化技术委员会. 示例标准题名: 示例标准编号[S]. 示例市: 示例出版社, 2018",
+    "孙八. 示例网页题名[EB/OL]. (2023-01-01)[2023-06-05]. https://example.com",
 ])
 ```
 
