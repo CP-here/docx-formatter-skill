@@ -461,27 +461,31 @@ add_data_table(doc,
         ("Claude Code", "<项目>/.claude/skills/docx-formatter/"),
         ("Codex", "<项目>/.codex/skills/docx-formatter/"),
         ("Cursor", "<项目>/.cursor/skills/docx-formatter/"),
-        ("其他框架", "放到助手能发现 SKILL.md 的任意位置"),
+        ("WorkBuddy", "<项目>/.workbuddy/skills/docx-formatter/"),
+        ("其他框架", "<项目> 下助手能发现 SKILL.md 的任意位置（须放在项目文件夹内）"),
     ],
     col_widths=[3.0, 11.4], font_size=9.5)
 add_body(doc, "放在项目级的好处是技能随仓库走，提交后每个打开该项目的人都能自动获得这套排版能力。")
-add_body(doc, "方式三：复制到用户级技能目录。")
+add_body(doc, "方式三：复制到用户级技能目录。复制到当前用户的技能目录，所有项目通用：")
 add_table_caption(doc, "用户级技能目录")
 add_data_table(doc,
     ["客户端", "用户级路径"],
     [
         ("Claude Code", "~/.claude/skills/docx-formatter/"),
         ("Codex", "~/.codex/skills/docx-formatter/"),
+        ("Cursor", "~/.cursor/skills/docx-formatter/"),
+        ("WorkBuddy", "~/.workbuddy/skills/docx-formatter/"),
+        ("其他框架", "当前用户主目录下助手能发现 SKILL.md 的任意位置"),
     ],
     col_widths=[3.0, 11.4], font_size=9.5)
-add_body(doc, "放在用户级的好处是当前用户的所有项目都能用，无需逐个项目复制。安装完成后重启助手会话，使技能索引刷新。")
+add_body(doc, "放在用户级的好处是当前用户的所有项目都能用，无需逐个项目复制；安装后在对话中以斜杠引用该技能，例如 /docx-formatter。安装完成后重启助手会话，使技能索引刷新。")
 
 add_h2(doc, "21.2 使用方式")
 add_body(doc, "安装后在对话中直接描述需求即可触发技能，例如生成一份带封面与目录的 Word 文档、排版一份技术报告为 Word、用数学方程格式化这段文档、在 Word 中创建流程图。可选功能需明确要求，例如将文档转为 PDF 查看效果、对文档添加批注、以追踪修订方式修改现有文档。")
 
 # ============ 许可证与致谢 ============
 add_h1(doc, "二十二、许可证")
-add_body(doc, "本项目可自由使用和修改。")
+add_body(doc, "本项目采用 MIT 许可证，可自由使用、修改和分发。")
 add_h1(doc, "二十三、致谢")
 add_link_para(doc, [
     ("text", "排版部分参考 "),

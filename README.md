@@ -448,18 +448,24 @@ npx skills add https://github.com/CP-here/docx-formatter-skill --skill docx-form
 | Claude Code | `<项目>/.claude/skills/docx-formatter/` |
 | Codex | `<项目>/.codex/skills/docx-formatter/` |
 | Cursor | `<项目>/.cursor/skills/docx-formatter/` |
-| 其他框架 | 放到助手能发现 `SKILL.md` 的任意位置 |
+| WorkBuddy | `<项目>/.workbuddy/skills/docx-formatter/` |
+| 其他框架 | `<项目>` 下助手能发现 `SKILL.md` 的任意位置（须放在项目文件夹内） |
 
 放在项目级的好处是技能随仓库走，提交后每个打开该项目的人都能自动获得这套排版能力。
 
 ### 方式三：复制到用户级技能目录
 
+复制到当前用户的技能目录，所有项目通用：
+
 | 客户端 | 用户级路径 |
 | --- | --- |
 | Claude Code | `~/.claude/skills/docx-formatter/` |
 | Codex | `~/.codex/skills/docx-formatter/` |
+| Cursor | `~/.cursor/skills/docx-formatter/` |
+| WorkBuddy | `~/.workbuddy/skills/docx-formatter/` |
+| 其他框架 | 当前用户主目录下助手能发现 `SKILL.md` 的任意位置 |
 
-放在用户级的好处是当前用户的所有项目都能用，无需逐个项目复制。
+放在用户级的好处是当前用户的所有项目都能用，无需逐个项目复制；安装后在对话中以斜杠引用该技能，例如 `/docx-formatter`。
 
 安装完成后重启助手会话，使技能索引刷新。
 
@@ -476,7 +482,7 @@ npx skills add https://github.com/CP-here/docx-formatter-skill --skill docx-form
 
 ## 许可证
 
-本项目可自由使用和修改。
+本项目采用 [MIT 许可证](LICENSE)，可自由使用、修改和分发。
 
 ## 致谢
 
