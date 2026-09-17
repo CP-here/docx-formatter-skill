@@ -450,7 +450,33 @@ add_code_block(doc, """docx-formatter/
 
 # ============ 安装与使用 ============
 add_h1(doc, "二十一、安装与使用")
-add_body(doc, "通过客户端安装：将技能压缩包上传至 AI 客户端对应的技能安装位置，客户端自动读取 SKILL.md 中的指令。手动安装：将仓库内容复制到项目的 skills/docx-formatter 目录，目录名与 SKILL.md 中 name 字段保持一致。")
+add_h2(doc, "21.1 安装")
+add_body(doc, "方式一：npx skills（推荐）。在命令行执行：")
+add_code_block(doc, "npx skills add https://github.com/CP-here/docx-formatter-skill --skill docx-formatter")
+add_body(doc, "方式二：复制到项目目录，随仓库携带。若希望某个项目内的 AI 助手都遵循本技能的排版规则，把 docx-formatter 目录复制到该项目的技能目录，目录名与 SKILL.md 中 name 字段保持一致：")
+add_table_caption(doc, "项目级技能目录")
+add_data_table(doc,
+    ["客户端", "项目级路径"],
+    [
+        ("Claude Code", "<项目>/.claude/skills/docx-formatter/"),
+        ("Codex", "<项目>/.codex/skills/docx-formatter/"),
+        ("Cursor", "<项目>/.cursor/skills/docx-formatter/"),
+        ("其他框架", "放到助手能发现 SKILL.md 的任意位置"),
+    ],
+    col_widths=[3.0, 11.4], font_size=9.5)
+add_body(doc, "放在项目级的好处是技能随仓库走，提交后每个打开该项目的人都能自动获得这套排版能力。")
+add_body(doc, "方式三：复制到用户级技能目录。")
+add_table_caption(doc, "用户级技能目录")
+add_data_table(doc,
+    ["客户端", "用户级路径"],
+    [
+        ("Claude Code", "~/.claude/skills/docx-formatter/"),
+        ("Codex", "~/.codex/skills/docx-formatter/"),
+    ],
+    col_widths=[3.0, 11.4], font_size=9.5)
+add_body(doc, "放在用户级的好处是当前用户的所有项目都能用，无需逐个项目复制。安装完成后重启助手会话，使技能索引刷新。")
+
+add_h2(doc, "21.2 使用方式")
 add_body(doc, "安装后在对话中直接描述需求即可触发技能，例如生成一份带封面与目录的 Word 文档、排版一份技术报告为 Word、用数学方程格式化这段文档、在 Word 中创建流程图。可选功能需明确要求，例如将文档转为 PDF 查看效果、对文档添加批注、以追踪修订方式修改现有文档。")
 
 # ============ 许可证与致谢 ============
@@ -458,16 +484,14 @@ add_h1(doc, "二十二、许可证")
 add_body(doc, "本项目可自由使用和修改。")
 add_h1(doc, "二十三、致谢")
 add_link_para(doc, [
-    ("text", "排版部分标准对齐 "),
+    ("text", "排版部分参考 "),
     ("link", "https://github.com/nju-lug/NJUThesis", "NJUThesis"),
-    ("text", " LaTeX 模板，部分对齐"),
+    ("text", " LaTeX 模板，部分参考"),
     ("link", "https://grs.pku.edu.cn/docs/2019-03/20190304101034750506.pdf", "北京大学研究生学位论文写作指南"),
-    ("text", "。"),
 ])
 add_link_para(doc, [
     ("text", "可选功能参考 "),
     ("link", "https://github.com/anthropics/skills/tree/main/skills/docx", "Anthropic 官方 docx 技能"),
-    ("text", "。"),
 ])
 
 out = os.path.join(ROOT, "README.docx")

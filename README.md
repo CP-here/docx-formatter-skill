@@ -433,9 +433,35 @@ docx-formatter/
 
 ## 安装
 
-通过客户端安装：将技能压缩包上传至 AI 客户端对应的技能安装位置，客户端自动读取 SKILL.md 中的指令。
+### 方式一：`npx skills`（推荐）
 
-手动安装：将仓库内容复制到项目的 skills/docx-formatter 目录，目录名与 SKILL.md 中 name 字段保持一致。
+```bash
+npx skills add https://github.com/CP-here/docx-formatter-skill --skill docx-formatter
+```
+
+### 方式二：复制到项目目录（随仓库携带）
+
+若希望某个项目内的 AI 助手都遵循本技能的排版规则，把 `docx-formatter/` 目录复制到该项目的技能目录，目录名与 SKILL.md 中 name 字段保持一致：
+
+| 客户端 | 项目级路径 |
+| --- | --- |
+| Claude Code | `<项目>/.claude/skills/docx-formatter/` |
+| Codex | `<项目>/.codex/skills/docx-formatter/` |
+| Cursor | `<项目>/.cursor/skills/docx-formatter/` |
+| 其他框架 | 放到助手能发现 `SKILL.md` 的任意位置 |
+
+放在项目级的好处是技能随仓库走，提交后每个打开该项目的人都能自动获得这套排版能力。
+
+### 方式三：复制到用户级技能目录
+
+| 客户端 | 用户级路径 |
+| --- | --- |
+| Claude Code | `~/.claude/skills/docx-formatter/` |
+| Codex | `~/.codex/skills/docx-formatter/` |
+
+放在用户级的好处是当前用户的所有项目都能用，无需逐个项目复制。
+
+安装完成后重启助手会话，使技能索引刷新。
 
 ## 使用方式
 
