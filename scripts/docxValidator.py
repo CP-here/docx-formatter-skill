@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-validate_docx.py
+docxValidator.py
 Lightweight .docx validator using only Python standard library.
 
 No external dependencies (no lxml, no defusedxml).
@@ -13,8 +13,8 @@ Performs 5 structural checks that catch the most common corruption issues:
 5. Whitespace preservation — w:t elements with edge whitespace have xml:space="preserve"
 
 Usage:
-    python validate_docx.py output.docx
-    python validate_docx.py output.docx --verbose
+    python docxValidator.py output.docx
+    python docxValidator.py output.docx --verbose
 
 Exit codes:
     0 — all checks passed

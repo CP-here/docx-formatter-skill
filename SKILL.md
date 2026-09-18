@@ -14,6 +14,33 @@ description: 生成专业排版的中文 Word (.docx) 文档，支持 OMML 数�
 4. **引用上标**（正文中的 \[1] 等引用标记自动渲染为上标）
 5. **轻量验证**（纯 stdlib 的 ZIP/XML 完整性检查，生成后默认执行）
 
+## 如何开始
+
+本工具为**函数库**，不含可执行入口：`docxBuilder.py` 无 `main()` 函数，直接运行不产生任何输出。Agent 生成文档的方式是**编写调用脚本**，导入库函数后按文档结构依次调用。
+
+**Agent 生成文档前，先阅读 `scripts/buildReadmeDocx.py`。** 该文件是本工具的标准骨架，从 `setup_document()` 到 `doc.save()` 的完整调用顺序（封面 → 目录 → 标题 → 正文 → 图表 → 参考文献 → 保存）均在其中示范；它同时用于生成项目根目录的 README.docx，因而始终与库保持同步。
+
+**参考文件：**
+
+| 文件 | 用途 |
+| -- | -- |
+| `scripts/buildReadmeDocx.py` | 标准骨架范例：import 段示范应导入的函数，正文示范各函数的调用顺序，文件头附使用说明 |
+| `SKILL.md`（本文档） | 各函数的完整参数说明、排版数值、规则与陷阱 |
+| `scripts/docxBuilder.py` | 函数库本体与 `PRESETS` 预设值，用于确认实现细节 |
+
+**标准流程：**
+
+1. 阅读 `scripts/buildReadmeDocx.py`，理解 import 段与正文的调用顺序
+2. 复制 `scripts/docxBuilder.py` 到工作目录；文档含公式时，再复制 `scripts/ommlBuilders.py` 与 `scripts/formulaTemplates.py`
+3. 新建调用脚本，按范例顺序写入实际内容
+4. 运行脚本生成文档，经 `scripts/docxValidator.py` 验证后交付
+
+**顺序规则**（范例文件头有同样提示）：
+
+1. `set_preset()` 须在 `setup_document()` 之前调用
+2. `add_cover_page()` 须在所有其它内容之前调用
+3. 分节决定页码起点：有目录时 `add_toc()` 已自动分节；有封面但无目录时须手动调用 `start_body(doc)`；两者皆无则无需处理
+
 ## 可选功能 — 默认跳过
 
 以下功能**默认不执行、不检查环境、不安装依赖**。仅当用户**明确要求**时才启用，详见文末「可选功能详解」章节：
@@ -22,7 +49,7 @@ description: 生成专业排版的中文 Word (.docx) 文档，支持 OMML 数�
 | --------- | ------------------------- | --------------------------------------------------------------------------- |
 | PDF 渲染验证  | 用户要求转 PDF 做视觉检查           | `scripts/optional/office/soffice.py`                                        |
 | XSD 模式验证  | 用户要求 OOXML 标准深度验证         | `scripts/optional/office/validate.py`                                       |
-| 编辑现有 docx | 用户要求修改已有 .docx 文件         | `scripts/optional/merge_runs.py` + `build_docx.py` 内 `safe_extract`/`rezip` |
+| 编辑现有 docx | 用户要求修改已有 .docx 文件         | `scripts/optional/merge_runs.py` + `docxBuilder.py` 内 `safe_extract`/`rezip` |
 | 追踪修订 / 批注 | 用户要求 redlining / comments | `scripts/optional/accept_changes.py`、`comment.py`                           |
 
 > **规则**：默认工作流只有「生成 → 轻量验证 → 交付」。遇到可选功能请求时，先参考对应章节确认依赖（LibreOffice、lxml、pandoc 等均按需安装），再执行。
@@ -55,7 +82,7 @@ description: 生成专业排版的中文 Word (.docx) 文档，支持 OMML 数�
 
 ## 环境配置
 
-本工具仅需**一个运行时**：Python 3.8+ 与 python-docx。数学公式由 `mathHelpers.py` 直接生成 OMML XML，无需 Node.js 或其他任何外部依赖。
+本工具仅需**一个运行时**：Python 3.8+ 与 python-docx。数学公式由 `ommlBuilders.py` 直接生成 OMML XML，无需 Node.js 或其他任何外部依赖。
 
 ### 安装 Python 与 python-docx
 
@@ -100,7 +127,7 @@ python -c "import docx; print('[OK] python-docx:', docx.__version__)"
 | `ModuleNotFoundError: No module named 'docx'` | python-docx 未安装  | `pip install python-docx`     |
 | `pip` 未识别                                     | Python 不在 PATH 中 | 重新安装 Python 时勾选 "Add to PATH" |
 | 中文字体显示为方框                                     | 系统缺少宋体/SimHei    | 安装东亚字体包；Windows 通常默认自带        |
-| `parse_xml()` 失败                              | OMML 字符串格式错误     | 确认使用 mathHelpers.py 的构建函数     |
+| `parse_xml()` 失败                              | OMML 字符串格式错误     | 确认使用 ommlBuilders.py 的构建函数     |
 
 ## 文件结构
 
@@ -108,12 +135,14 @@ python -c "import docx; print('[OK] python-docx:', docx.__version__)"
 skill 根目录（SKILL.md 所在目录）/
 ├── SKILL.md                     # 本文件
 ├── README.md                    # 项目说明
+├── README.docx                  # 排版效果样例（由 scripts/buildReadmeDocx.py 生成）
 ├── LICENSE
 └── scripts/
-    ├── build_docx.py            # Python 文档构建模板（核心；含 safe_extract/rezip 供可选编辑功能使用）
-    ├── mathHelpers.py           # OMML 数学元素构建器（核心，纯 stdlib）
-    ├── formulas.py              # 公式定义模板（核心）
-    ├── validate_docx.py         # 轻量验证脚本（核心，纯 stdlib，默认执行）
+    ├── docxBuilder.py           # Python 文档构建库（核心；含 safe_extract/rezip 供可选编辑功能使用）
+    ├── ommlBuilders.py          # OMML 数学元素构建器（核心，纯 stdlib）
+    ├── formulaTemplates.py      # 公式定义模板（核心）
+    ├── docxValidator.py         # 轻量验证脚本（核心，纯 stdlib，默认执行）
+    ├── buildReadmeDocx.py       # ★ 标准骨架范例 —— 生成文档前先阅读
     └── optional/                # ★ 可选功能脚本 — 默认不使用、不复制到工作目录
         ├── merge_runs.py        # 合并碎片 run（编辑现有文档前置步骤）
         ├── accept_changes.py    # 接受所有追踪修订（LibreOffice 宏）
@@ -132,15 +161,17 @@ skill 根目录（SKILL.md 所在目录）/
             └── validators/      # 验证器（docx / redlining / pptx）
 ```
 
-## 核心函数（build\_docx.py）
+## 核心函数（docxBuilder.py）
 
 **需复制到工作目录的脚本文件：**
 
-- `scripts/build_docx.py` — 包含所有排版辅助函数的主模板
+- `scripts/docxBuilder.py` — 包含所有排版辅助函数的构建库（**无 `main()` 入口**，由调用脚本 import 使用）
 
-- `scripts/mathHelpers.py` — OMML 数学构建器（仅文档含公式时需要）
+- `scripts/ommlBuilders.py` — OMML 数学构建器（仅文档含公式时需要）
 
-- `scripts/formulas.py` — 公式定义示例（仅文档含公式时需要）
+- `scripts/formulaTemplates.py` — 公式定义示例（仅文档含公式时需要）
+
+> **调用方式见 `scripts/buildReadmeDocx.py`** —— 那份范例展示了下面这些函数在真实文档中的完整串联顺序。不要直接运行 `docxBuilder.py`（它没有入口），也不要试图修改它来放入内容；**内容应写在你自己的调用脚本里**。
 
 | 函数                                                                                                  | 用途                                                                                                             |
 | --------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
@@ -153,7 +184,7 @@ skill 根目录（SKILL.md 所在目录）/
 | `add_h3(doc, text)`                                                                                 | 黑体 小四(12pt) 左对齐加粗，1.5倍行距，段前=12pt，段后=6pt                                                                        |
 | `add_body(doc, text)`                                                                               | 宋体 小四(12pt) 两端对齐，首行缩进2字符，1.5倍行距。支持 `**bold**` 和 `[n]` 引用上标                                                     |
 | `add_item_para(doc, label, text)`                                                                   | 加粗标签 + 正文，首行缩进。正文支持 `**bold**` 和 `[n]` 引用上标                                                                    |
-| `add_eq_para(doc, math_xml)`                                                                        | 居中块级公式段落（接收 mathHelpers 的 OMML XML 字符串）                                                                        |
+| `add_eq_para(doc, math_xml)`                                                                        | 居中块级公式段落（接收 ommlBuilders 的 OMML XML 字符串）                                                                        |
 | `add_body_with_math(doc, parts)`                                                                    | 正文与行内公式混排段落（parts 为 `("text", str)` / `("math", xml)` 列表）                                                      |
 | `add_code_block(doc, code, font_size)`                                                              | 代码块：Consolas 等宽字体（默认9pt），浅灰底纹（F2F2F2），逐行段落，左缩进                                                                 |
 | `add_data_table(doc, headers, rows, col_widths, font_size)`                                         | 数据表：灰色表头（D9D9D9 黑体加粗居中），数据行宋体，末列左对齐其余居中，固定列宽                                                                   |
@@ -248,7 +279,7 @@ NJUThesis 全局使用 `linespread = 1.625`。计算方式：LaTeX 默认行距�
 
 ## 排版预设（PRESETS / set\_preset）
 
-排版参数集中在 `build_docx.py` 顶部的 `PRESETS` 字典中（嵌套分组），不在各 `add_*` 函数内散落硬编码。
+排版参数集中在 `docxBuilder.py` 顶部的 `PRESETS` 字典中（嵌套分组），不在各 `add_*` 函数内散落硬编码。
 
 **分组结构**：
 
@@ -653,12 +684,12 @@ add_bibliography(doc, [
 
 ## OMML 数学公式指南
 
-数学公式由 `mathHelpers.py` 直接构建 OMML（Office Math Markup Language）XML，经 `build_docx.py` 的 `add_eq_para()` / `add_body_with_math()` 插入文档。生成的是 Word 原生可编辑公式，与手动插入的公式完全一致。
+数学公式由 `ommlBuilders.py` 直接构建 OMML（Office Math Markup Language）XML，经 `docxBuilder.py` 的 `add_eq_para()` / `add_body_with_math()` 插入文档。生成的是 Word 原生可编辑公式，与手动插入的公式完全一致。
 
 ### 基本元素
 
 ```python
-from mathHelpers import r, sub, sup, frac, sumOp, func, paren, bracket, math, inlineMath
+from ommlBuilders import r, sub, sup, frac, sumOp, func, paren, bracket, math, inlineMath
 
 # 纯数学文本
 r("E_total")
@@ -696,8 +727,8 @@ inlineMath([sub("y", "i")])
 **块级公式（居中独立行）：**
 
 ```python
-from build_docx import add_eq_para
-from mathHelpers import r, sub, sumOp, func, math
+from docxBuilder import add_eq_para
+from ommlBuilders import r, sub, sumOp, func, math
 
 eq = math([
     sub("L", "LLM"), r(" = - "),
@@ -709,8 +740,8 @@ add_eq_para(doc, eq)
 **行内公式（与正文混排）：**
 
 ```python
-from build_docx import add_body_with_math
-from mathHelpers import sub, inlineMath
+from docxBuilder import add_body_with_math
+from ommlBuilders import sub, inlineMath
 
 add_body_with_math(doc, [
     ("text", "其中，"),
@@ -719,12 +750,12 @@ add_body_with_math(doc, [
 ])
 ```
 
-### 预定义公式（formulas.py）
+### 预定义公式（formulaTemplates.py）
 
-`formulas.py` 提供 eq1\~eq4 常用公式模板（总损失、交叉熵、对比学习 InfoNCE、LoRA 分解），可直接使用或作为新增公式的参考模式：
+`formulaTemplates.py` 提供 eq1\~eq4 常用公式模板（总损失、交叉熵、对比学习 InfoNCE、LoRA 分解），可直接使用或作为新增公式的参考模式：
 
 ```python
-from formulas import eq1, eq2, eq3, eq4
+from formulaTemplates import eq1, eq2, eq3, eq4
 add_eq_para(doc, eq2)   # 交叉熵损失
 ```
 
@@ -767,9 +798,9 @@ add_eq_para(doc, eq2)   # 交叉熵损失
 命令行、源码片段等代码内容使用等宽字体 + 浅灰底纹渲染，**不要**将代码放入普通正文段落：
 
 ```python
-add_code_block(doc, "python validate_docx.py output.docx --verbose")
+add_code_block(doc, "python docxValidator.py output.docx --verbose")
 
-add_code_block(doc, """from build_docx import setup_document
+add_code_block(doc, """from docxBuilder import setup_document
 doc = setup_document()""")
 ```
 
@@ -795,7 +826,7 @@ add_data_table(doc,
 在表格单元格中插入行内 OMML 公式（如"函数调用 vs 渲染效果"对照表）：
 
 ```python
-from mathHelpers import sub, inlineMath
+from ommlBuilders import sub, inlineMath
 table = add_data_table(doc, ["元素", "调用", "效果"], rows=[...], col_widths=[2.0, 6.0, 5.0])
 add_math_to_cell(table.cell(1, 2), inlineMath([sub("y", "pred")]))
 ```
@@ -833,31 +864,35 @@ add_math_to_cell(table.cell(1, 2), inlineMath([sub("y", "pred")]))
 ## 工作流程
 
 1. **阅读**用户提供的源文本/内容
-2. **复制模板脚本**从本 skill 目录的 `scripts/` 到工作目录：
+2. **阅读范例** `scripts/buildReadmeDocx.py` —— 这是生成文档的标准骨架，理解其 import 段与调用顺序（封面 → 目录 → 标题 → 正文 → 图表 → 参考文献 → 保存）
+3. **复制构建库**从本 skill 目录的 `scripts/` 到工作目录：
 
-   - 无公式文档：仅 `build_docx.py`
+   - 无公式文档：仅 `docxBuilder.py`
 
-   - 含公式文档：`build_docx.py` + `mathHelpers.py` + `formulas.py`
+   - 含公式文档：`docxBuilder.py` + `ommlBuilders.py` + `formulaTemplates.py`
 
    - **不要复制** **`scripts/optional/`**（可选功能专用）
-3. **修改**模板的 CONTENT 区段为实际文档内容
-4. **运行脚本** — 输出到用户工作区文件夹
-5. **验证** — 使用纯 Python 标准库验证工具检查文档完整性：
+4. **编写调用脚本** — 在**新建的脚本**中 `import` 需要的 `add_*` 函数，照范例的顺序拼出内容
+
+   - `docxBuilder.py` 是**无入口的库**，不要直接运行它，也不要改它的内容；**文档内容写在你自己的脚本里**
+   - 注意「如何开始」一节列出的三条顺序规则
+5. **运行脚本** — 输出到用户工作区文件夹
+6. **验证** — 使用纯 Python 标准库验证工具检查文档完整性：
 
    ```bash
-   python validate_docx.py output.docx
+   python docxValidator.py output.docx
    # 或详细输出模式
-   python validate_docx.py output.docx --verbose
+   python docxValidator.py output.docx --verbose
    ```
 
    验证工具执行 5 项检查：ZIP 完整性、XML 格式良好性、文件引用完整性、内容类型声明、空白保留。所有检查通过退出码为 0，否则为 1。
-6. **分享**文件，使用 `computer://` 链接
+7. **分享**文件，使用 `computer://` 链接
 
 ## 常见陷阱
 
 1. **禁止使用 emoji** — 文档中仅使用 Unicode 符号
 2. **文件锁定**：如果 Word 已打开文件，保存会静默失败 — 使用不同文件名
-3. **禁止手写 m:nary 空上标**：始终使用 mathHelpers.py 中的 `sumOp()` — 它使用 `m:sSub` 配合 Unicode ∑，避免空上标渲染问题
+3. **禁止手写 m:nary 空上标**：始终使用 ommlBuilders.py 中的 `sumOp()` — 它使用 `m:sSub` 配合 Unicode ∑，避免空上标渲染问题
 4. **始终展平列表**：所有数学辅助函数使用 `_flat()` — 新增函数时需对所有 children 参数应用 `_flat()`
 5. **字体东亚设置**：python-docx 中必须设置 `rFonts.set(qn('w:eastAsia'), font_name)` 才能正确渲染中文字体
 6. **表格列宽**：所有表格（框图 / 数据表 / 箭头行）一律经内部 `_new_table()` 建立——它把 `w:tblW`（dxa 总宽）、`w:tblGrid/gridCol`、每个 `w:tcW` 从**同一份列宽**一次写入并把布局锁为 fixed，宽度只有一个来源；默认总宽取常量 `TABLE_WIDTH_CM`（14cm）。**不要绕开它用 `doc.add_table()` 自建表格**，否则宽度会出现第二个口径，字多的那格被 Word autofit 撑宽，同一张图上下框体就会不等宽
@@ -865,9 +900,9 @@ add_math_to_cell(table.cell(1, 2), inlineMath([sub("y", "pred")]))
 8. **列表符号**：使用 Word 内置编号样式，切勿在文本中直接写 `•` 字符
 9. **脚本级变量**：`_fig_counter` / `_tbl_counter` 在 `setup_document()` 中自动重置。单进程多次生成文档时，只要重新调用 `setup_document()` 即可从 图1/表1 开始
 
-## 文档验证（validate\_docx.py）
+## 文档验证（docxValidator.py）
 
-`validate_docx.py` 是纯 Python 标准库实现的轻量验证脚本，无外部依赖。用于在生成 .docx 后快速检查文档结构完整性。
+`docxValidator.py` 是纯 Python 标准库实现的轻量验证脚本，无外部依赖。用于在生成 .docx 后快速检查文档结构完整性。
 
 ### 验证项
 
@@ -883,10 +918,10 @@ add_math_to_cell(table.cell(1, 2), inlineMath([sub("y", "pred")]))
 
 ```bash
 # 基本验证（仅显示 FAILED 项）
-python validate_docx.py output.docx
+python docxValidator.py output.docx
 
 # 详细模式（显示每项 PASSED）
-python validate_docx.py output.docx --verbose
+python docxValidator.py output.docx --verbose
 ```
 
 ### 退出码
@@ -898,7 +933,7 @@ python validate_docx.py output.docx --verbose
 ### 编程式调用
 
 ```python
-from validate_docx import validate_docx
+from docxValidator import validate_docx
 
 if validate_docx("output.docx", verbose=True):
     print("文档验证通过")
@@ -912,13 +947,13 @@ else:
 
 ### 安全解压（safe\_extract）
 
-`build_docx.py` 中的 `safe_extract()` 函数在解压 .docx ZIP 包时提供两层防护：
+`docxBuilder.py` 中的 `safe_extract()` 函数在解压 .docx ZIP 包时提供两层防护：
 
 1. **符号链接拒绝**：检测 `external_attr` 中的 `S_ISLNK` 标志，拒绝包含符号链接的条目
 2. **路径遍历防护**：解析每个条目的目标路径，验证其不超出目标目录边界
 
 ```python
-from build_docx import safe_extract, rezip
+from docxBuilder import safe_extract, rezip
 import zipfile
 
 # 安全解压现有 .docx
@@ -940,7 +975,7 @@ rezip("./unpacked", "output.docx")
 ### 编辑现有文档工作流
 
 ```
-解压（safe_extract）→ 合并碎片 run（可选）→ 编辑 XML → 重新打包（rezip）→ 验证（validate_docx）
+解压（safe_extract）→ 合并碎片 run（可选）→ 编辑 XML → 重新打包（rezip）→ 验证（docxValidator）
 ```
 
 > **注意**：编辑 XML 时保持原始格式，不要 pretty-print。`xml.etree.ElementTree` 的 `tostring()` 默认不保留原始缩进。
@@ -949,7 +984,7 @@ rezip("./unpacked", "output.docx")
 
 交付 .docx 文件前：
 
-- [ ] `validate_docx.py` 全部 5 项检查通过
+- [ ] `docxValidator.py` 全部 5 项检查通过
 
 - [ ] 文件大小 > 10KB（空文档约 3KB）
 

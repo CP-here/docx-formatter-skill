@@ -1,17 +1,48 @@
 # -*- coding: utf-8 -*-
-"""将 README 渲染为 docx，特有结构以原生形式呈现"""
-import sys, os
-ROOT = os.path.dirname(os.path.abspath(__file__))
-sys.path.insert(0, os.path.join(ROOT, 'scripts'))
+"""范例：本技能生成文档的完整标准骨架（同时用于生成项目根的 README.docx）。
 
-from build_docx import (setup_document, add_cover_page, add_toc, add_h1, add_h2,
+【怎么用这个文件】
+本技能是函数库，docxBuilder.py 没有 main() 入口，直接运行没有任何输出。
+你要做的是**新建一个自己的脚本**，把内容写进去。本文件就是那份脚本的范式：
+
+  1. 读第 17 行起的 import 段 —— 需要哪些函数就从 docxBuilder 导入哪些
+  2. 读第 52 行起的正文 —— add_cover_page → add_toc → add_h1/add_h2/add_h3
+     → add_body → 图表 → add_bibliography 的**调用顺序**就是标准顺序
+  3. 在你的脚本里照这个顺序写自己的内容
+
+【本文件里哪些部分不必照抄】
+下面三行是本文件作为「项目内构建脚本」特有的，你在临时工作目录里写自己的脚本
+时**不需要**：把你的脚本与 docxBuilder.py 放在同一目录，直接 import 即可。
+
+    SCRIPTS_DIR = os.path.dirname(os.path.abspath(__file__))
+    PROJECT_ROOT = os.path.dirname(SCRIPTS_DIR)
+    sys.path.insert(0, SCRIPTS_DIR)
+
+同理，末尾的 doc.save(PROJECT_ROOT + "/README.docx") 也只是本文件的输出目标，
+换成你自己的输出路径。
+
+【三条最易踩的顺序规则】
+  1. set_preset() 必须在 setup_document() 之前调用（页边距与默认字体在此时读取）
+  2. add_cover_page() 必须写在所有其它内容之前（它以分节符结束封面节）
+  3. 页码分节 —— 有目录时 add_toc() 已自动处理；只有封面无目录时需手动
+     start_body(doc)；两者都无则不用管
+
+【用法】在项目根目录执行：python scripts/buildReadmeDocx.py
+"""
+import sys, os
+
+SCRIPTS_DIR = os.path.dirname(os.path.abspath(__file__))
+PROJECT_ROOT = os.path.dirname(SCRIPTS_DIR)
+sys.path.insert(0, SCRIPTS_DIR)
+
+from docxBuilder import (setup_document, add_cover_page, add_toc, add_h1, add_h2,
     add_h3, add_body, add_item_para, add_eq_para, add_body_with_math,
     add_code_block, add_data_table, add_math_to_cell, add_box, add_multi_line_box,
     add_multi_col_table, add_arrow_down, add_arrow_horizontal, add_arrow_row,
     add_separator_note, add_fig_caption, add_table_caption,
     add_layered_architecture, add_note, add_bibliography, set_run_font)
-from mathHelpers import r, sub, sup, frac, sumOp, func, math, inlineMath
-from formulas import eq1, eq2
+from ommlBuilders import r, sub, sup, frac, sumOp, func, math, inlineMath
+from formulaTemplates import eq1, eq2
 
 from docx.shared import Pt, RGBColor
 from docx.enum.text import WD_ALIGN_PARAGRAPH
@@ -59,8 +90,22 @@ add_toc(doc)
 # ============ 一、项目简介 ============
 add_h1(doc, "一、项目简介")
 add_body(doc, "docx-formatter 生成专业排版的中文 Word 文档，覆盖封面、目录、页码分节、章节结构、正文、数学公式、表格、流程图、引用上标与文档验证的完整排版链路，输出符合学术与工程规范的 .docx 文件。排版效果可参考仓库中的 README.docx。")
-add_body(doc, "技能采用单引擎架构，仅依赖 Python 3.8 以上版本与 python-docx。数学公式由 mathHelpers.py 直接生成 OMML XML，即 Word 原生公式格式，公式在 Word 中可二次编辑，无需 Node.js 或任何外部转换工具。")
+add_body(doc, "技能采用单引擎架构，仅依赖 Python 3.8 以上版本与 python-docx。数学公式由 ommlBuilders.py 直接生成 OMML XML，即 Word 原生公式格式，公式在 Word 中可二次编辑，无需 Node.js 或任何外部转换工具。")
 add_body(doc, "本文档即由该技能自身排版生成：封面由 add_cover_page 生成，目录为 Word 原生目录域，页脚页码为 PAGE 域且只在正文显示，文中所有公式为 Word 原生可编辑公式，流程图与架构图为表格框图，引用标记为真实上标，可作为排版效果的直接样例。")
+
+add_h2(doc, "1.1 如何开始")
+add_body(doc, "本技能为函数库，不含可执行入口：docxBuilder.py 无 main() 函数，直接运行不产生任何输出。Agent 生成文档的方式是编写调用脚本，导入库函数后按文档结构依次调用。")
+add_body(doc, "Agent 生成文档前应先阅读 scripts/buildReadmeDocx.py。该文件是本技能的标准骨架，从 setup_document() 到 doc.save() 的完整调用顺序均在其正文示范；它同时用于生成项目根目录的 README.docx，因而始终与库保持同步。")
+add_table_caption(doc, "参考文件")
+add_data_table(doc,
+    ["参考文件", "用途"],
+    [
+        ("scripts/buildReadmeDocx.py", "标准骨架范例，覆盖封面、目录、标题、正文、分点、公式、数据表、流程图、图表标题与参考文献的完整调用顺序"),
+        ("SKILL.md", "各函数的完整参数说明、排版数值、规则与陷阱"),
+        ("scripts/docxBuilder.py", "函数库本体与预设值，用于确认实现细节"),
+    ],
+    col_widths=[4.4, 10.0], font_size=9.5)
+add_body(doc, "标准流程为：Agent 阅读 buildReadmeDocx.py 的 import 段与调用顺序，复制 docxBuilder.py 到工作目录（文档含公式时再加 ommlBuilders.py 与 formulaTemplates.py），新建调用脚本并按范例顺序写入内容，运行后用 docxValidator.py 验证。")
 
 # ============ 二、功能矩阵 ============
 add_h1(doc, "二、功能矩阵")
@@ -110,7 +155,7 @@ add_data_table(doc,
 
 # ============ 四、排版预设 ============
 add_h1(doc, "四、排版预设")
-add_body(doc, "排版参数集中在 build_docx.py 顶部的 PRESETS 字典中，按标题、正文、分点、图注、页面、目录、封面等分组管理，各排版函数统一读取当前激活的预设。")
+add_body(doc, "排版参数集中在 docxBuilder.py 顶部的 PRESETS 字典中，按标题、正文、分点、图注、页面、目录、封面等分组管理，各排版函数统一读取当前激活的预设。")
 add_item_para(doc, "set_preset 整套切换：", "须在 setup_document 之前调用，默认预设与标准排版一致，新增预设只需向 PRESETS 追加一份同结构的嵌套字典。")
 add_item_para(doc, "中西文字体分离：", "开启后西文使用 Times New Roman，中文保持原有字体不变。")
 add_item_para(doc, "封面留白比例：", "位于预设的封面分组内，留白高度由它乘以版心高得出，换纸张与页边距时封面位置随之等比适配。")
@@ -179,7 +224,7 @@ add_eq_para(doc, math([
 add_fig_caption(doc, "似然比检测损失的嵌套公式")
 
 add_h2(doc, "5.4 希腊字母与数学符号")
-add_body(doc, "formulas.py 内置若干常用公式模板，可直接插入文档，也可作为自定义公式的参考模式。希腊字母与数学符号以 Unicode 直接书写，如 λ、τ、α、β、∑、×、·、∈。")
+add_body(doc, "formulaTemplates.py 内置若干常用公式模板，可直接插入文档，也可作为自定义公式的参考模式。希腊字母与数学符号以 Unicode 直接书写，如 λ、τ、α、β、∑、×、·、∈。")
 add_body(doc, "求和符号必须使用 sumOp 构建。求和若采用 n 元运算符加空上标的写法，Word 会渲染一个不可见的上标占位框，导致文件看起来损坏；sumOp 改用下标结构配合 Unicode ∑ 实现，彻底规避该问题。所有接收子元素的函数内部自动展平嵌套列表，防止 XML 拼接错误。")
 
 add_h2(doc, "5.5 预定义公式模板")
@@ -295,7 +340,7 @@ add_body(doc, "图标题与表标题由内部计数器自动编号，无需手�
 add_h1(doc, "十一、代码块与数据表")
 add_h2(doc, "11.1 代码块")
 add_body(doc, "代码块以 Consolas 等宽字体渲染代码内容，默认 9pt，浅灰底纹，无首行缩进，逐行成段：")
-add_code_block(doc, "python validate_docx.py output.docx --verbose")
+add_code_block(doc, "python docxValidator.py output.docx --verbose")
 add_h2(doc, "11.2 数据表")
 add_body(doc, "数据表函数生成数据型表格，灰色表头黑体加粗居中，固定列宽，数据行末列左对齐、其余列居中。本文档中各表均为实际渲染效果。")
 add_h2(doc, "11.3 单元格公式")
@@ -374,7 +419,7 @@ add_data_table(doc,
         ("空白保留", "含首尾空白的文本节点均带保留属性"),
     ],
     col_widths=[3.6, 10.8], font_size=9.5)
-add_code_block(doc, "python validate_docx.py output.docx --verbose")
+add_code_block(doc, "python docxValidator.py output.docx --verbose")
 
 # ============ 十六、安全解压与重打包 ============
 add_h1(doc, "十六、安全解压与重打包")
@@ -429,13 +474,14 @@ add_h1(doc, "二十、文件结构")
 add_code_block(doc, """docx-formatter/
 ├── SKILL.md                    # 技能指令文件
 ├── README.md                   # 项目说明
-├── README.docx                 # 排版效果样例
+├── README.docx                 # 排版效果样例（由 scripts/buildReadmeDocx.py 生成）
 ├── LICENSE
 └── scripts/
-    ├── build_docx.py           # 文档构建模板，排版与公式插入
-    ├── mathHelpers.py          # OMML 数学元素构建器
-    ├── formulas.py             # 预定义公式模板
-    ├── validate_docx.py        # 轻量验证脚本
+    ├── docxBuilder.py          # 文档构建库，排版与公式插入
+    ├── ommlBuilders.py         # OMML 数学元素构建器
+    ├── formulaTemplates.py     # 预定义公式模板
+    ├── docxValidator.py        # 轻量验证脚本
+    ├── buildReadmeDocx.py      # 标准骨架范例，写自己的脚本前先读它
     └── optional/               # 可选功能脚本
         ├── merge_runs.py       # 合并碎片 run
         ├── accept_changes.py   # 接受所有追踪修订
@@ -498,6 +544,6 @@ add_link_para(doc, [
     ("link", "https://github.com/anthropics/skills/tree/main/skills/docx", "Anthropic 官方 docx 技能"),
 ])
 
-out = os.path.join(ROOT, "README.docx")
+out = os.path.join(PROJECT_ROOT, "README.docx")
 doc.save(out)
 print("saved:", out)

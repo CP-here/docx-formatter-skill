@@ -1,16 +1,33 @@
 # -*- coding: utf-8 -*-
 """
-build_docx.py
-Python template for generating Word (.docx) documents.
+docxBuilder.py
+Word (.docx) document builder — a library of typography and layout functions.
 Use this engine when NO OMML math formulas are needed (only text, tables, diagrams).
+
+This module is a LIBRARY, not a runnable script. It has no main() entry point:
+you import the helpers and assemble your own document in your own script.
 
 PREREQUISITE: pip install python-docx
 
-USAGE:
-  1. Copy this file to working directory
-  2. Modify the main() function with your content
-  3. Modify OUTPUT_PATH
-  4. Run: python build_docx.py
+USAGE — write your own script that imports from this module:
+  1. Copy this file (and ommlBuilders.py / formulaTemplates.py if formulas are
+     needed) to your working directory
+  2. Create a script that imports the helpers and calls them in order
+  3. Run your script
+
+Example:
+
+    from docxBuilder import setup_document, add_title, add_h1, add_body
+
+    doc = setup_document()
+    add_title(doc, "文档标题")
+    add_h1(doc, "一、概述")
+    add_body(doc, "正文内容...")
+    doc.save("output.docx")
+
+For a complete worked example, read buildReadmeDocx.py in this same directory —
+it is the skeleton to copy: cover, TOC, headings, body, math, tables, diagrams
+and bibliography in the correct call order.
 
 Features:
   - Typography presets: PRESETS + set_preset('name') whole-set switching —
@@ -336,17 +353,17 @@ def _add_runs_with_formatting(p, text):
 
 
 # ============================================================
-# OMML MATH HELPERS — formulas via mathHelpers.py
+# OMML MATH HELPERS — formulas via ommlBuilders.py
 # ============================================================
 
 _M_NS_DECL = 'xmlns:m="http://schemas.openxmlformats.org/officeDocument/2006/math"'
 
 
 def _insert_omml(p, omml_xml):
-    """Parse an OMML XML string (from mathHelpers) and append it to paragraph p.
+    """Parse an OMML XML string (from ommlBuilders) and append it to paragraph p.
 
-    mathHelpers.py is imported lazily so build_docx.py stays standalone
-    (copyable without mathHelpers.py) for math-free documents.
+    ommlBuilders.py is imported lazily so docxBuilder.py stays standalone
+    (copyable without ommlBuilders.py) for math-free documents.
     """
     from docx.oxml import parse_xml  # noqa: local import, same package as OxmlElement
     if "xmlns:m=" not in omml_xml:
@@ -358,8 +375,8 @@ def add_eq_para(doc, math_xml):
     """Centered block math formula paragraph.
 
     Args:
-        math_xml: OMML XML string from mathHelpers.math(), e.g.
-            from mathHelpers import r, sub, sumOp, func, math
+        math_xml: OMML XML string from ommlBuilders.math(), e.g.
+            from ommlBuilders import r, sub, sumOp, func, math
             eq = math([sub("L", "LLM"), r(" = - "),
                        sumOp([r("i")], [sub("y", "i")])])
             add_eq_para(doc, eq)
@@ -383,7 +400,7 @@ def add_body_with_math(doc, parts):
             Text parts support **bold** and [n] citation superscripts.
 
     Example:
-        from mathHelpers import sub, inlineMath
+        from ommlBuilders import sub, inlineMath
         add_body_with_math(doc, [
             ("text", "其中，"),
             ("math", inlineMath([sub("L", "LLM")])),
@@ -476,7 +493,7 @@ def add_data_table(doc, headers, rows, col_widths, font_size=9.5):
 
 
 def add_math_to_cell(cell, omml_xml):
-    """Insert an inline OMML formula (mathHelpers.inlineMath) into a table
+    """Insert an inline OMML formula (ommlBuilders.inlineMath) into a table
     cell, centered. The cell's first paragraph is used."""
     p = cell.paragraphs[0]
     p.alignment = WD_ALIGN_PARAGRAPH.CENTER
@@ -1581,51 +1598,6 @@ def add_cover_page(doc, title, subtitle=None, org=None, date=None):
 
 
 # ============================================================
-# MAIN — Modify this function for your document content
-# ============================================================
-
-def main():
-    OUTPUT_PATH = r'OUTPUT.docx'  # TODO: Set output path
-
-    doc = setup_document()
-
-    # --- Example content (replace with your own) ---
-
-    # 需要封面时用它开头（封面独立成一节、不显示页码）；用了封面就不必再 add_title。
-    # 后面接 add_toc()，或在无目录时手动调 start_body(doc)，页码会从正文重新起算。
-    # add_cover_page(doc, "文档标题", subtitle="技术方案",
-    #                org="某某科技有限公司", date="2026年9月")
-
-    add_title(doc, "文档标题（居中）")
-
-    add_h1(doc, "一、概述")
-    add_body(doc, "在此填写文档概述内容")
-
-    add_h1(doc, "二、技术背景")
-    add_body(doc, "在此填写技术背景描述")
-
-    # Example: Table-box diagram (flowchart)
-    add_h1(doc, "三、系统架构")
-    add_box(doc, "第一层（描述内容）", width_cm=12, font_size=10)
-    add_arrow_down(doc)
-    add_box(doc, "第二层（描述内容）", width_cm=12, font_size=10)
-    add_arrow_down(doc)
-    add_multi_col_table(doc, [
-        ("模块A", "描述A"),
-        ("模块B", "描述B"),
-        ("模块C", "描述C"),
-    ], col_width_cm=[4, 4, 4], font_size=9)
-    add_arrow_down(doc)
-    add_box(doc, "第三层（描述内容）", width_cm=12, font_size=10)
-    add_fig_caption(doc, "图1 系统架构图")
-
-    # --- End of example content ---
-
-    doc.save(OUTPUT_PATH)
-    print(f'Word文档已生成: {OUTPUT_PATH}')
-
-
-# ============================================================
 # SAFE EXTRACT / REZIP — for editing existing .docx files
 # Uses only Python standard library (zipfile, stat, pathlib)
 # ============================================================
@@ -1704,7 +1676,3 @@ def rezip(src_dir, out_path):
     finally:
         if tmp_out.exists():
             tmp_out.unlink()
-
-
-if __name__ == '__main__':
-    main()

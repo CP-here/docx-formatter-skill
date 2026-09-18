@@ -1,15 +1,15 @@
 # -*- coding: utf-8 -*-
 """
-formulas.py
-Formula definitions using mathHelpers.py — 1:1 port of formulas.js.
+formulaTemplates.py
+Formula templates built with ommlBuilders.py — 1:1 port of formulas.js.
 
 Each formula is an OMML XML string that can be placed via add_eq_para(doc, eqN).
-Import: from formulas import eq1, eq2, eq3, eq4
+Import: from formulaTemplates import eq1, eq2, eq3, eq4
 Add new formulas following the same pattern.
 Greek letters: use Unicode directly (λ=\\u03bb, τ=\\u03c4, α=\\u03b1, β=\\u03b2, Σ=\\u2211)
 """
 
-from mathHelpers import r, sub, frac, sumOp, func, paren, bracket, math
+from ommlBuilders import r, sub, frac, sumOp, func, paren, bracket, math
 
 # ============================================================
 # Formula 1: S_total = S_time + λ × S_freq

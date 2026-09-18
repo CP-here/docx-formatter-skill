@@ -1,15 +1,15 @@
 # -*- coding: utf-8 -*-
 """
-mathHelpers.py
+ommlBuilders.py
 OMML (Office Math Markup Language) math element builders — Python port of mathHelpers.js.
 
 Generates raw OMML XML strings, insertable into python-docx paragraphs via
-the add_eq_para() / add_body_with_math() helpers in build_docx.py.
+the add_eq_para() / add_body_with_math() helpers in docxBuilder.py.
 
 Zero external dependencies (stdlib only). Function signatures are identical
 to the JS version, so formula definitions port 1:1:
 
-    from mathHelpers import r, sub, sup, frac, sumOp, func, paren, bracket, math, inlineMath
+    from ommlBuilders import r, sub, sup, frac, sumOp, func, paren, bracket, math, inlineMath
 
     eq = math([
         sub("L", "LLM"), r(" = - "),
@@ -28,7 +28,7 @@ CRITICAL NOTES (same rules as JS version):
 
 from xml.sax.saxutils import escape
 
-# OOXML math namespace (injected by build_docx._insert_omml when parsing)
+# OOXML math namespace (injected by docxBuilder._insert_omml when parsing)
 M_NS_DECL = 'xmlns:m="http://schemas.openxmlformats.org/officeDocument/2006/math"'
 
 
