@@ -1,7 +1,8 @@
 # docx-formatter 中文 Word 专业排版技能
 
+中文 | [English](README_EN.md)
 
-docx-formatter 将文本或 Markdown 内容排版为专业的中文 Word 文档。最常见的用法是把 AI 生成的 Markdown 正文（报告、说明、方案、论文、讲义等）按学术与工程规范排版为 .docx，并借助库函数补充 Markdown 无法表达的构件；覆盖章节结构、正文、数学公式、表格、流程图、目录、引用上标与文档验证的完整排版链路，输出符合学术与工程规范的 .docx 文件。排版效果可参考仓库中的 README.docx 与 README.pdf。
+docx-formatter 将文本或 Markdown 内容排版为专业的中文 Word 文档。最常见的用法是把 AI 生成的 Markdown 正文（报告、说明、方案、论文、讲义等）按学术与工程规范排版为 .docx，并借助库函数补充 Markdown 无法表达的构件；覆盖章节结构、正文、数学公式、表格、流程图、目录、引用上标与文档验证的完整排版链路，输出符合学术与工程规范的 .docx 文件。排版效果可参考仓库中的 [README.docx](README.docx) 与 [README.pdf](README.pdf)。
 
 ![技能效果示意图](assets/effect-overview.png)
 
@@ -114,7 +115,7 @@ add_eq_para(doc, math([
 ]))
 ```
 
-渲染结果为 Word 原生可编辑公式（markdown 无法渲染 OMML，下方一行是纯文本近似示意，不是输入语法；实际渲染效果见仓库中的 README.docx）：
+渲染结果为 Word 原生可编辑公式（markdown 无法渲染 OMML，下方一行是纯文本近似示意，不是输入语法；实际渲染效果见仓库中的 [README.docx](README.docx)）：
 
 > f(t) = a₀/2 + Σₖ aₖ cos(kωt)
 
@@ -451,6 +452,7 @@ pip install python-docx
 docx-formatter/
 ├── SKILL.md                    # 技能指令文件
 ├── README.md                   # 项目说明
+├── README_EN.md                # 项目说明（英文版）
 ├── README.docx                 # 排版效果样例（由 scripts/_build_readme_docx.py 生成）
 ├── README.pdf                  # README.docx 的 PDF 渲染结果（由 scripts/optional/office/word2pdf.py 生成）
 ├── assets/

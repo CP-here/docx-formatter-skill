@@ -575,6 +575,7 @@ add_h1(doc, "七、文件结构")
 add_code_block(doc, """docx-formatter/
 ├── SKILL.md                    # 技能指令文件
 ├── README.md                   # 项目说明
+├── README_EN.md                # 项目说明（英文版）
 ├── README.docx                 # 排版效果样例（由 scripts/_build_readme_docx.py 生成）
 ├── README.pdf                  # README.docx 的 PDF 渲染结果（由 scripts/optional/office/word2pdf.py 生成）
 ├── assets/

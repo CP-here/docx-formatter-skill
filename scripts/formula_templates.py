@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 formula_templates.py
-Formula templates built with omml_math_kit.py — 1:1 port of formulas.js.
+Formula templates built with omml_math_kit.py
 
 Each formula is an OMML XML string that can be placed via add_eq_para(doc, eqN).
 Import: from formula_templates import eq1, eq2, eq3, eq4
