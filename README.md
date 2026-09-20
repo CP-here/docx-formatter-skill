@@ -1,13 +1,13 @@
 # docx-formatter 中文 Word 专业排版技能
 
 
-docx-formatter 生成专业排版的中文 Word 文档，覆盖章节结构、正文、数学公式、表格、流程图、目录、引用上标与文档验证的完整排版链路，输出符合学术与工程规范的 .docx 文件。排版效果可参考仓库中的 README.docx 与 README.pdf。
+docx-formatter 将文本或 Markdown 内容排版为专业的中文 Word 文档。最常见的用法是把 AI 生成的 Markdown 正文（报告、说明、方案、论文、讲义等）按学术与工程规范排版为 .docx，并借助库函数补充 Markdown 无法表达的构件；覆盖章节结构、正文、数学公式、表格、流程图、目录、引用上标与文档验证的完整排版链路，输出符合学术与工程规范的 .docx 文件。排版效果可参考仓库中的 README.docx 与 README.pdf。
 
 ![技能效果示意图](assets/effect-overview.png)
 
 *图：左侧为 README.md 源码，右侧为同一内容经本技能排版生成的 README.docx。*
 
-技能采用单引擎架构，仅依赖 Python 3.8 以上版本与 python-docx。数学公式由 ommlBuilders.py 直接生成 OMML XML，即 Word 原生公式格式，公式在 Word 中可二次编辑，无需 Node.js 或任何外部转换工具。
+技能采用单引擎架构，仅依赖 Python 3.8 以上版本与 python-docx。数学公式由 omml_math_kit.py 直接生成 OMML XML，即 Word 原生公式格式，公式在 Word 中可二次编辑，无需 Node.js 或任何外部转换工具。
 
 ## 功能矩阵
 
@@ -38,17 +38,17 @@ docx-formatter 生成专业排版的中文 Word 文档，覆盖章节结构、�
 
 ## 如何开始
 
-本技能为函数库，不含可执行入口：docxBuilder.py 无 main() 函数，直接运行不产生任何输出。Agent 生成文档的方式是编写调用脚本，导入库函数后按文档结构依次调用。
+本技能为函数库，不含可执行入口：docx_layout_kit.py 无 main() 函数，直接运行不产生任何输出。Agent 生成文档的方式是编写调用脚本，导入库函数后按文档结构依次调用。
 
-Agent 生成文档前应先阅读 scripts/buildReadmeDocx.py。该文件是本技能的标准骨架，从 setup_document() 到 doc.save() 的完整调用顺序均在其正文示范；它同时用于生成项目根目录的 README.docx，因而始终与库保持同步。
+Agent 生成文档前应先阅读 scripts/_build_readme_docx.py。该文件是本技能的标准骨架，从 setup_document() 到 doc.save() 的完整调用顺序均在其正文示范；它同时用于生成项目根目录的 README.docx，因而始终与库保持同步。
 
 | 参考文件 | 用途 |
 | --- | --- |
-| scripts/buildReadmeDocx.py | 标准骨架范例，覆盖封面、目录、标题、正文、分点、公式、数据表、流程图、图表标题与参考文献的完整调用顺序 |
+| scripts/_build_readme_docx.py | 标准骨架范例，覆盖封面、目录、标题、正文、分点、公式、数据表、流程图、图表标题与参考文献的完整调用顺序 |
 | SKILL.md | 各函数的完整参数说明、排版数值、规则与陷阱 |
-| scripts/docxBuilder.py | 函数库本体与预设值，用于确认实现细节 |
+| scripts/docx_layout_kit.py | 函数库本体与预设值，用于确认实现细节 |
 
-标准流程为：Agent 阅读 buildReadmeDocx.py 的 import 段与调用顺序，复制 docxBuilder.py 到工作目录（文档含公式时再加 ommlBuilders.py 与 formulaTemplates.py），新建调用脚本并按范例顺序写入内容，运行后用 docxValidator.py 验证。
+标准流程为：Agent 阅读 _build_readme_docx.py 的 import 段与调用顺序，复制 docx_layout_kit.py 到工作目录（文档含公式时再加 omml_math_kit.py 与 formula_templates.py），新建调用脚本并按范例顺序写入内容，运行后用 docx_validator.py 验证。
 
 ## 核心模块
 
@@ -66,7 +66,7 @@ Agent 生成文档前应先阅读 scripts/buildReadmeDocx.py。该文件是本�
 | add_item_para | 加粗标签加分点内容的段落，标签整体加粗 |
 
 ```python
-from docxBuilder import setup_document, add_title, add_h1, add_body
+from docx_layout_kit import setup_document, add_title, add_h1, add_body
 
 doc = setup_document()
 add_title(doc, "信号分析实验报告")
@@ -76,7 +76,7 @@ add_body(doc, "本实验验证傅里叶分析方法在周期信号处理中的�
 
 ### 排版预设
 
-排版参数集中在 docxBuilder.py 顶部的 PRESETS 字典中，按标题、正文、分点、图注、页面、目录、封面等分组管理，各排版函数统一读取当前激活的预设。
+排版参数集中在 docx_layout_kit.py 顶部的 PRESETS 字典中，按标题、正文、分点、图注、页面、目录、封面等分组管理，各排版函数统一读取当前激活的预设。
 
 - set_preset 整套切换排版参数，须在 setup_document 之前调用，默认预设与标准排版一致
 - 新增预设只需向 PRESETS 追加一份同结构的嵌套字典
@@ -103,8 +103,8 @@ add_body(doc, "本实验验证傅里叶分析方法在周期信号处理中的�
 块级公式以傅里叶级数为例：
 
 ```python
-from docxBuilder import add_eq_para
-from ommlBuilders import r, sub, frac, sumOp, func, math
+from docx_layout_kit import add_eq_para
+from omml_math_kit import r, sub, frac, sumOp, func, math
 
 add_eq_para(doc, math([
     r("f(t) = "),
@@ -121,8 +121,8 @@ add_eq_para(doc, math([
 行内公式与正文混排：
 
 ```python
-from docxBuilder import add_body_with_math
-from ommlBuilders import sub, inlineMath
+from docx_layout_kit import add_body_with_math
+from omml_math_kit import sub, inlineMath
 
 add_body_with_math(doc, [
     ("text", "其中，"),
@@ -131,7 +131,7 @@ add_body_with_math(doc, [
 ])
 ```
 
-formulaTemplates.py 内置若干常用公式模板，是现成的 OMML 公式对象，导入即可插入文档，无需重新拼装构建函数，也可作为自定义公式的参考模式。希腊字母与数学符号以 Unicode 直接书写，如 λ、τ、α、β、∑、×、·、∈。
+formula_templates.py 内置若干常用公式模板，是现成的 OMML 公式对象，导入即可插入文档，无需重新拼装构建函数，也可作为自定义公式的参考模式。希腊字母与数学符号以 Unicode 直接书写，如 λ、τ、α、β、∑、×、·、∈。
 
 求和符号必须使用 sumOp 构建。求和若采用 n 元运算符加空上标的写法，Word 会渲染一个不可见的上标占位框，导致文件看起来损坏；sumOp 改用下标结构配合 Unicode ∑ 实现，彻底规避该问题。所有接收子元素的函数内部自动展平嵌套列表，防止 XML 拼接错误。
 
@@ -260,7 +260,7 @@ setup_document 自动调用 reset_counters，每次生成文档均从图1与表1
 add_code_block 以 Consolas 等宽字体渲染代码内容，默认 9pt，浅灰底纹，无首行缩进，逐行成段：
 
 ```python
-add_code_block(doc, "python docxValidator.py output.docx --verbose")
+add_code_block(doc, "python docx_validator.py output.docx --verbose")
 ```
 
 add_data_table 生成数据型表格，灰色表头黑体加粗居中，固定列宽，数据行末列左对齐、其余列居中：
@@ -279,7 +279,7 @@ add_data_table(doc,
 add_math_to_cell 向表格单元格插入行内 OMML 公式，适用于函数调用与渲染效果对照一类的场景：
 
 ```python
-from ommlBuilders import sub, inlineMath
+from omml_math_kit import sub, inlineMath
 
 table = add_data_table(doc, ["元素", "调用", "效果"], rows, col_widths=[2.0, 6.0, 5.0])
 add_math_to_cell(table.cell(1, 2), inlineMath([sub("X", "k")]))
@@ -333,7 +333,7 @@ start_body 把此前所有节的页脚清空（封面与目录各自成节，因
 
 ### 轻量文档验证
 
-docxValidator.py 基于纯 Python 标准库实现，无外部依赖，在文档生成后执行 5 项结构检查：
+docx_validator.py 基于纯 Python 标准库实现，无外部依赖，在文档生成后执行 5 项结构检查：
 
 | 检查项 | 说明 |
 | --- | --- |
@@ -344,7 +344,7 @@ docxValidator.py 基于纯 Python 标准库实现，无外部依赖，在文档�
 | 空白保留 | 含首尾空白的文本节点均带保留属性 |
 
 ```bash
-python docxValidator.py output.docx --verbose
+python docx_validator.py output.docx --verbose
 ```
 
 全部检查通过时退出码为 0，否则为 1。
@@ -399,7 +399,7 @@ python scripts/optional/office/validate.py output.docx
 修改已有 .docx 文件内容，工作流为安全解压、合并碎片 run、编辑 XML、重新打包、验证：
 
 ```python
-from docxBuilder import safe_extract, rezip
+from docx_layout_kit import safe_extract, rezip
 import zipfile
 
 with zipfile.ZipFile("input.docx", "r") as zf:
@@ -451,29 +451,29 @@ pip install python-docx
 docx-formatter/
 ├── SKILL.md                    # 技能指令文件
 ├── README.md                   # 项目说明
-├── README.docx                 # 排版效果样例（由 scripts/buildReadmeDocx.py 生成）
+├── README.docx                 # 排版效果样例（由 scripts/_build_readme_docx.py 生成）
 ├── README.pdf                  # README.docx 的 PDF 渲染结果（由 scripts/optional/office/word2pdf.py 生成）
 ├── assets/
 │   └── effect-overview.png     # README 开头的技能效果示意图
 ├── LICENSE
 └── scripts/
-    ├── docxBuilder.py          # 文档构建库，排版与公式插入
-    ├── ommlBuilders.py         # OMML 数学元素构建器
-    ├── formulaTemplates.py     # 预定义公式模板
-    ├── docxValidator.py        # 轻量验证脚本
-    ├── buildReadmeDocx.py      # 标准骨架范例，生成文档前先阅读
-    └── optional/               # 可选功能脚本
-        ├── merge_runs.py       # 合并碎片 run
-        ├── accept_changes.py   # 接受所有追踪修订
-        ├── comment.py          # 批注管理
-        ├── templates/          # 批注 XML 模板
-        └── office/             # 验证与转换工具
-            ├── word2pdf.py     # Windows Word（COM）渲染 PDF
-            ├── soffice.py      # LibreOffice 跨平台调用
-            ├── validate.py     # XSD 模式验证入口
-            ├── helpers/        # 通用辅助函数包
-            ├── schemas/        # OOXML 模式文件
-            └── validators/     # 验证器
+    ├── docx_layout_kit.py    # 文档构建库，排版与公式插入
+    ├── omml_math_kit.py      # OMML 数学元素构建器
+    ├── formula_templates.py  # 预定义公式模板
+    ├── docx_validator.py     # 轻量验证脚本
+    ├── _build_readme_docx.py # 标准骨架范例，生成文档前先阅读
+    └── optional/             # 可选功能脚本
+        ├── merge_runs.py     # 合并碎片 run
+        ├── accept_changes.py # 接受所有追踪修订
+        ├── comment.py        # 批注管理
+        ├── templates/        # 批注 XML 模板
+        └── office/           # 验证与转换工具
+            ├── word2pdf.py   # Windows Word（COM）渲染 PDF
+            ├── soffice.py    # LibreOffice 跨平台调用
+            ├── validate.py   # XSD 模式验证入口
+            ├── helpers/      # 通用辅助函数包
+            ├── schemas/      # OOXML 模式文件
+            └── validators/   # 验证器
 ```
 
 ## 安装
@@ -518,6 +518,8 @@ npx skills add https://github.com/CP-here/docx-formatter-skill --skill docx-form
 
 安装后在对话中直接描述需求即可触发技能：
 
+- 把这段内容排版成 Word
+- 把这份 Markdown 转成 Word 文档
 - 生成一份带公式的 Word 文档
 - 排版一份技术报告为 Word
 - 用数学方程格式化这段文档

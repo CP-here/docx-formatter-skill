@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-docxBuilder.py
+docx_layout_kit.py
 Word (.docx) document builder — a library of typography and layout functions.
 Use this engine when NO OMML math formulas are needed (only text, tables, diagrams).
 
@@ -10,14 +10,14 @@ you import the helpers and assemble your own document in your own script.
 PREREQUISITE: pip install python-docx
 
 USAGE — write your own script that imports from this module:
-  1. Copy this file (and ommlBuilders.py / formulaTemplates.py if formulas are
+  1. Copy this file (and omml_math_kit.py / formula_templates.py if formulas are
      needed) to your working directory
   2. Create a script that imports the helpers and calls them in order
   3. Run your script
 
 Example:
 
-    from docxBuilder import setup_document, add_title, add_h1, add_body
+    from docx_layout_kit import setup_document, add_title, add_h1, add_body
 
     doc = setup_document()
     add_title(doc, "文档标题")
@@ -25,7 +25,7 @@ Example:
     add_body(doc, "正文内容...")
     doc.save("output.docx")
 
-For a complete worked example, read buildReadmeDocx.py in this same directory —
+For a complete worked example, read _build_readme_docx.py in this same directory —
 it is the skeleton to copy: cover, TOC, headings, body, math, tables, diagrams
 and bibliography in the correct call order.
 
@@ -353,17 +353,17 @@ def _add_runs_with_formatting(p, text):
 
 
 # ============================================================
-# OMML MATH HELPERS — formulas via ommlBuilders.py
+# OMML MATH HELPERS — formulas via omml_math_kit.py
 # ============================================================
 
 _M_NS_DECL = 'xmlns:m="http://schemas.openxmlformats.org/officeDocument/2006/math"'
 
 
 def _insert_omml(p, omml_xml):
-    """Parse an OMML XML string (from ommlBuilders) and append it to paragraph p.
+    """Parse an OMML XML string (from omml_math_kit) and append it to paragraph p.
 
-    ommlBuilders.py is imported lazily so docxBuilder.py stays standalone
-    (copyable without ommlBuilders.py) for math-free documents.
+    omml_math_kit.py is imported lazily so docx_layout_kit.py stays standalone
+    (copyable without omml_math_kit.py) for math-free documents.
     """
     from docx.oxml import parse_xml  # noqa: local import, same package as OxmlElement
     if "xmlns:m=" not in omml_xml:
@@ -375,8 +375,8 @@ def add_eq_para(doc, math_xml):
     """Centered block math formula paragraph.
 
     Args:
-        math_xml: OMML XML string from ommlBuilders.math(), e.g.
-            from ommlBuilders import r, sub, sumOp, func, math
+        math_xml: OMML XML string from omml_math_kit.math(), e.g.
+            from omml_math_kit import r, sub, sumOp, func, math
             eq = math([sub("L", "LLM"), r(" = - "),
                        sumOp([r("i")], [sub("y", "i")])])
             add_eq_para(doc, eq)
@@ -400,7 +400,7 @@ def add_body_with_math(doc, parts):
             Text parts support **bold** and [n] citation superscripts.
 
     Example:
-        from ommlBuilders import sub, inlineMath
+        from omml_math_kit import sub, inlineMath
         add_body_with_math(doc, [
             ("text", "其中，"),
             ("math", inlineMath([sub("L", "LLM")])),
@@ -493,7 +493,7 @@ def add_data_table(doc, headers, rows, col_widths, font_size=9.5):
 
 
 def add_math_to_cell(cell, omml_xml):
-    """Insert an inline OMML formula (ommlBuilders.inlineMath) into a table
+    """Insert an inline OMML formula (omml_math_kit.inlineMath) into a table
     cell, centered. The cell's first paragraph is used."""
     p = cell.paragraphs[0]
     p.alignment = WD_ALIGN_PARAGRAPH.CENTER
