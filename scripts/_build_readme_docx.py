@@ -29,7 +29,7 @@
 
 【用法】在项目根目录执行：python scripts/_build_readme_docx.py
 """
-import sys, os
+import sys, os, datetime
 
 SCRIPTS_DIR = os.path.dirname(os.path.abspath(__file__))
 PROJECT_ROOT = os.path.dirname(SCRIPTS_DIR)
@@ -104,8 +104,10 @@ def add_overview_figure(doc, image_path, width_cm=14.64, caption=None):
 doc = setup_document()
 
 # 封面：独立成节、不显示页码；其后的目录节同样不显示页码，正文从第 1 页起算
+_today = datetime.date.today()
 add_cover_page(doc, "docx-formatter 中文 Word 专业排版技能",
-               subtitle="技能说明与排版效果样例")
+               subtitle="技能说明与排版效果样例",
+               org="陈攀", date="%d年%d月%d日" % (_today.year, _today.month, _today.day))
 add_toc(doc)
 
 # ============ 开篇（无标题，对应 md 文档总标题下的引言） ============
