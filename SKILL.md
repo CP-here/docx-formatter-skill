@@ -1,7 +1,32 @@
 ---
-
 name: docx-formatter
-description: 将文本或 Markdown 内容排版为专业的中文 Word (.docx) 文档，支持 OMML 数学公式、表格框图、标准排版、引用上标和轻量完整性验证。当用户要求把 Markdown 或纯文本转成 Word 文档、生成带公式的 Word 文档、用数学方程格式化文档、在 Word 中创建流程图样式图表、将参考文献引用渲染为上标、或排版/格式化文档为 Word 时调用。
+display_name: 中文 Word 专业排版
+display_name_en: Chinese Word Formatter
+description: "将文本或 Markdown 内容排版为专业的中文 Word (.docx) 文档，支持 OMML 数学公式、表格框图、标准排版、引用上标和轻量完整性验证。当用户要求 Word 排版、把 Markdown 或纯文本转成 Word 文档、生成带公式的 Word 文档、用数学方程格式化文档、在 Word 中创建流程图样式图表、将参考文献引用渲染为上标、或格式化文档为 Word 时调用。"
+description_zh: "把 AI 生成的 Markdown 或纯文本排版为可直接交付的中文 Word 文档：黑体标题、宋体正文的规范版式，封面、目录、分节页码、数据表一应俱全；数学公式以 Word 原生 OMML 插入，公式编辑器可直接修改；流程图与架构图以表格构图绘制，在 Word 里随时编辑；参考文献按 GB/T 7714-2015 自动编号著录。当用户需要 Word 排版、Markdown 转 Word、论文/技术方案/研究报告排版、生成带公式的 Word 文档时使用。"
+description_en: "Typesets AI-generated Markdown or plain text into ready-to-deliver Chinese Word documents: standard typography with bold headings and Song body text, cover pages, table-of-contents fields, sectioned page numbering, and data tables. Mathematical formulas are inserted as native Word OMML equations that stay editable in the equation editor, and flowcharts or architecture diagrams are drawn with table composition so they can be edited directly in Word. Bibliographies are numbered and formatted to GB/T 7714-2015 automatically. Use it when the user asks for Word typesetting, Markdown-to-Word conversion, thesis or technical proposal formatting, or Word documents containing formulas."
+category: productivity
+version: 1.0.0
+author: 陈攀
+triggers:
+- Word 排版
+- Markdown 转 Word
+- 公式排版
+- 论文排版
+- 文档排版
+tags:
+- agent-skill
+- chinese
+- chinese-typesetting
+- claude-code-skill
+- docx
+- docx-generator
+- markdown
+- omml
+- python
+- typesetting
+- word
+- word-formatting
 ---
 
 # 中文 DOCX 排版工具
