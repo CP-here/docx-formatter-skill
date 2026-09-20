@@ -1,6 +1,11 @@
 # docx-formatter 中文 Word 专业排版技能
 
-docx-formatter 生成专业排版的中文 Word 文档，覆盖章节结构、正文、数学公式、表格、流程图、目录、引用上标与文档验证的完整排版链路，输出符合学术与工程规范的 .docx 文件。排版效果可参考仓库中的 README.docx。
+
+docx-formatter 生成专业排版的中文 Word 文档，覆盖章节结构、正文、数学公式、表格、流程图、目录、引用上标与文档验证的完整排版链路，输出符合学术与工程规范的 .docx 文件。排版效果可参考仓库中的 README.docx 与 README.pdf。
+
+![技能效果示意图](assets/effect-overview.png)
+
+*图：左侧为 README.md 源码，右侧为同一内容经本技能排版生成的 README.docx。*
 
 技能采用单引擎架构，仅依赖 Python 3.8 以上版本与 python-docx。数学公式由 ommlBuilders.py 直接生成 OMML XML，即 Word 原生公式格式，公式在 Word 中可二次编辑，无需 Node.js 或任何外部转换工具。
 
@@ -25,7 +30,7 @@ docx-formatter 生成专业排版的中文 Word 文档，覆盖章节结构、�
 | 安全解压与重打包 | 启用 | 编辑现有文档的安全基础 |
 | 目录生成 | 按需 | Heading 样式加目录域，末尾分节触发正文页码从 1 起算 |
 | 封面页 | 按需 | 居中标题块，顶部留白按版心比例自动适配 |
-| PDF 渲染验证 | 可选 | LibreOffice 转换后视觉检查 |
+| PDF 渲染验证 | 可选 | Windows 调用本机 Word 渲染，其他平台调用 LibreOffice |
 | XSD 模式验证 | 可选 | OOXML 标准深度验证 |
 | 编辑现有文档 | 可选 | 解压、编辑与重打包工作流 |
 | 追踪修订 | 可选 | 接受全部追踪修订 |
@@ -354,7 +359,28 @@ safe_extract 在解压 .docx 时拒绝符号链接并校验路径边界，防止
 
 ### PDF 渲染验证
 
-将生成的 .docx 转换为 PDF 进行视觉检查，依赖 LibreOffice：
+将生成的 .docx 转换为 PDF 进行视觉检查。两条路径按平台择一使用：
+
+| 路径 | 依赖 | 适用平台 | 脚本 |
+| --- | --- | --- | --- |
+| Windows Word（Windows 首选） | Microsoft Word + `pip install pywin32` | Windows | `scripts/optional/office/word2pdf.py` |
+| LibreOffice | LibreOffice（`soffice` 命令行） | 跨平台 | `scripts/optional/office/soffice.py` |
+
+Windows 上本机装有 Word 时优先使用 Word 路径。该路径调用 Word 自身的排版引擎，中文字体、OMML 公式、目录域与页脚页码分节均与在 Word 中打开时一致，较 LibreOffice 更贴近真实 Word 渲染效果。导出前先更新域，目录不会残留占位文字；每次使用独立的 Word 实例、文档以只读方式打开，导出后关闭文档并退出该实例，不干扰用户已打开的 Word 窗口，也不残留后台 WINWORD.EXE 进程。
+
+```bash
+# Windows：默认输出到源文件同目录同名（output.docx → output.pdf）
+python scripts/optional/office/word2pdf.py output.docx
+
+# 指定输出文件或输出目录
+python scripts/optional/office/word2pdf.py output.docx -o dist/output.pdf
+python scripts/optional/office/word2pdf.py output.docx --outdir ./pdf_out
+
+# 导出 PDF/A-1b
+python scripts/optional/office/word2pdf.py output.docx --pdfa
+```
+
+其他平台或用 LibreOffice 时：
 
 ```bash
 python scripts/optional/office/soffice.py convert output.docx --outdir ./pdf_out
@@ -417,7 +443,7 @@ accept_changes.py 通过 LibreOffice 宏接受文档中的所有追踪修订；c
 pip install python-docx
 ```
 
-可选依赖按需安装：LibreOffice 用于 PDF 渲染验证与接受追踪修订，lxml 用于 XSD 模式验证，Poppler 的 pdftoppm 用于 PDF 转图片检查，pandoc 用于读取现有文档内容。
+可选依赖按需安装：Windows 上渲染 PDF 所需的 pywin32（配合本机 Word），LibreOffice 用于非 Windows 平台的 PDF 渲染与接受追踪修订，lxml 用于 XSD 模式验证，Poppler 的 pdftoppm 用于 PDF 转图片检查，pandoc 用于读取现有文档内容。
 
 ## 文件结构
 
@@ -426,6 +452,9 @@ docx-formatter/
 ├── SKILL.md                    # 技能指令文件
 ├── README.md                   # 项目说明
 ├── README.docx                 # 排版效果样例（由 scripts/buildReadmeDocx.py 生成）
+├── README.pdf                  # README.docx 的 PDF 渲染结果（由 scripts/optional/office/word2pdf.py 生成）
+├── assets/
+│   └── effect-overview.png     # README 开头的技能效果示意图
 ├── LICENSE
 └── scripts/
     ├── docxBuilder.py          # 文档构建库，排版与公式插入
@@ -439,6 +468,7 @@ docx-formatter/
         ├── comment.py          # 批注管理
         ├── templates/          # 批注 XML 模板
         └── office/             # 验证与转换工具
+            ├── word2pdf.py     # Windows Word（COM）渲染 PDF
             ├── soffice.py      # LibreOffice 跨平台调用
             ├── validate.py     # XSD 模式验证入口
             ├── helpers/        # 通用辅助函数包

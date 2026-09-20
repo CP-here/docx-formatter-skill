@@ -47,7 +47,7 @@ description: 生成专业排版的中文 Word (.docx) 文档，支持 OMML 数�
 
 | 可选功能      | 触发条件（仅用户明确要求）             | 所在脚本                                                                        |
 | --------- | ------------------------- | --------------------------------------------------------------------------- |
-| PDF 渲染验证  | 用户要求转 PDF 做视觉检查           | `scripts/optional/office/soffice.py`                                        |
+| PDF 渲染验证  | 用户要求转 PDF 做视觉检查           | `scripts/optional/office/word2pdf.py`（Windows Word）、`scripts/optional/office/soffice.py`（LibreOffice） |
 | XSD 模式验证  | 用户要求 OOXML 标准深度验证         | `scripts/optional/office/validate.py`                                       |
 | 编辑现有 docx | 用户要求修改已有 .docx 文件         | `scripts/optional/merge_runs.py` + `docxBuilder.py` 内 `safe_extract`/`rezip` |
 | 追踪修订 / 批注 | 用户要求 redlining / comments | `scripts/optional/accept_changes.py`、`comment.py`                           |
@@ -136,6 +136,9 @@ skill 根目录（SKILL.md 所在目录）/
 ├── SKILL.md                     # 本文件
 ├── README.md                    # 项目说明
 ├── README.docx                  # 排版效果样例（由 scripts/buildReadmeDocx.py 生成）
+├── README.pdf                   # README.docx 的 PDF 渲染结果（由 scripts/optional/office/word2pdf.py 生成）
+├── assets/
+│   └── effect-overview.png      # README 开头的技能效果示意图
 ├── LICENSE
 └── scripts/
     ├── docxBuilder.py           # Python 文档构建库（核心；含 safe_extract/rezip 供可选编辑功能使用）
@@ -154,6 +157,7 @@ skill 根目录（SKILL.md 所在目录）/
         │   ├── commentsIds.xml
         │   └── people.xml
         └── office/              # 验证与转换工具（可选）
+            ├── word2pdf.py      # Windows Word（COM）渲染 PDF
             ├── soffice.py       # LibreOffice 跨平台调用
             ├── validate.py      # XSD 模式验证入口
             ├── helpers/         # 通用辅助函数（safe_extract, rezip, opc_target 等）
@@ -1008,15 +1012,42 @@ rezip("./unpacked", "output.docx")
 
 ## 可选功能详解
 
-以下章节**默认不使用**。仅当用户明确要求对应功能时才阅读和执行。所有可选依赖（LibreOffice、lxml、pandoc 等）按需安装，默认不检查。
+以下章节**默认不使用**。仅当用户明确要求对应功能时才阅读和执行。所有可选依赖（Windows 上渲染 PDF 所需的 pywin32、LibreOffice、lxml、pandoc 等）按需安装，默认不检查。
 
 ### 可选功能 A：PDF 渲染验证
 
 **用途**：将生成的 .docx 转换为 PDF 进行视觉检查，确认排版正确。
 
-**依赖**：LibreOffice（`soffice` 命令行）
+**两条路径，按平台择一使用**：
 
-**脚本**：`scripts/optional/office/soffice.py`（跨平台 LibreOffice 调用封装）
+| 路径                    | 依赖                                 | 适用平台    | 脚本                                        |
+| --------------------- | ---------------------------------- | ------- | ----------------------------------------- |
+| Windows Word（Windows 首选） | Microsoft Word + `pip install pywin32` | Windows | `scripts/optional/office/word2pdf.py`     |
+| LibreOffice           | LibreOffice（`soffice` 命令行）          | 跨平台     | `scripts/optional/office/soffice.py`      |
+
+**Windows Word 路径**（Windows 上本机装有 Word 时的首选）：调用 Word 自身的排版引擎，中文字体、OMML 公式、目录域与页脚页码分节均与在 Word 中打开时一致，较 LibreOffice 更贴近真实 Word 渲染效果。导出前先更新域，因此目录不会残留占位文字。每次使用**独立**的 Word 实例、文档以**只读**方式打开，导出后关闭文档并退出该实例，不干扰用户已打开的 Word 窗口，也不残留后台 `WINWORD.EXE` 进程。
+
+```bash
+# 默认输出到源文件同目录同名（output.docx → output.pdf）
+python scripts/optional/office/word2pdf.py output.docx
+
+# 指定输出文件 / 输出目录
+python scripts/optional/office/word2pdf.py output.docx -o dist/output.pdf
+python scripts/optional/office/word2pdf.py output.docx --outdir ./pdf_out
+
+# 导出 PDF/A-1b
+python scripts/optional/office/word2pdf.py output.docx --pdfa
+```
+
+编程式调用：
+
+```python
+from word2pdf import convert_docx_to_pdf
+
+convert_docx_to_pdf("output.docx", "output.pdf")
+```
+
+**LibreOffice 路径**：非 Windows 平台，或 Windows 上未安装 Word 时使用。
 
 ```bash
 # 转换为 PDF
