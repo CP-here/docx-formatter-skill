@@ -117,8 +117,36 @@ add_overview_figure(doc, os.path.join(PROJECT_ROOT, "assets", "effect-overview.p
 add_note(doc, "图：左侧为 README.md 源码，右侧为同一内容经本技能排版生成的 README.docx。")
 add_body(doc, "技能采用单引擎架构，核心排版功能仅依赖 Python 3.8 及以上版本与 python-docx。数学公式由 omml_math_kit.py 直接生成 OMML XML，即 Word 原生公式格式，公式在 Word 中可二次编辑，无需 Node.js、LaTeX 渲染器或 Pandoc 等任何外部转换工具。")
 
-# ============ 一、功能矩阵 ============
-add_h1(doc, "一、功能矩阵")
+# ============ 一、安装 ============
+add_h1(doc, "一、安装")
+add_h2(doc, "1.1 方式一：让 Agent 帮你装（推荐）")
+add_body(doc, "在聊天窗口中直接输入“帮我安装 https://github.com/CP-here/docx-formatter-skill”，让 Agent 安装；安装完成后直接让它用本技能排版即可。")
+add_h2(doc, "1.2 方式二：下载 Release 压缩包")
+add_body(doc, "从 Releases 页面的 Assets 下载 `docx-formatter.zip`，按客户端类型安装：")
+add_item_para(doc, "支持上传技能压缩包或技能市场的客户端：", "腾讯 WorkBuddy（SkillHub 上传 zip）、豆包桌面版 / 豆包工作（技能·连接器面板）、阿里千问办公 / QoderWork、通义桌面 agent、Kimi Work、智谱 AutoGLM / AutoClaw、百度 DuMate（百度搭子）、阶跃 AI 桌面 / OpenClaw、有道 LobsterAI（技能商店 / 本地导入）、飞书 AI、TRAE Work、扣子 Coze 等，将 zip 或解压后的技能文件夹按各客户端“上传技能 / 导入 Skill / 本地技能”入口添加即可；")
+add_item_para(doc, "代码或 agent 类客户端：", "腾讯 CodeBuddy、字节 TRAE、DeepSeek Harness、OpenCode，以及兼容 Claude / Cursor 技能格式的客户端，将解压后的 `docx-formatter/` 放入对应技能目录（如 `~/.claude/skills/`、`~/.cursor/skills/`、项目内 `.agents/skills/` 等）；")
+add_item_para(doc, "其他不支持手动安装技能的桌面助手：", "如 ChatGPT 桌面版、统信 UOS AI、Chatbox 及各厂商“电脑版 / 桌面版”对话客户端，可直接提供 zip 文件让 Agent 自行安装。")
+add_body(doc, "该压缩包已剔除样例文档与展示图，仅保留运行所需的 `README.md`、`SKILL.md`、`scripts/` 与 `LICENSE`。")
+add_h2(doc, "1.3 方式三：从仓库复制")
+add_body(doc, "`git clone` 本仓库后，把仓库根目录整体复制到技能目录即可，目录名与 SKILL.md 中 name 字段保持一致。项目级与用户级路径如下：")
+add_table_caption(doc, "项目级与用户级技能目录")
+add_data_table(doc,
+    ["客户端", "项目级路径", "用户级路径"],
+    [
+        ("Claude Code", "`<项目>/.claude/skills/docx-formatter/`", "`~/.claude/skills/docx-formatter/`"),
+        ("Codex", "`<项目>/.codex/skills/docx-formatter/`", "`~/.codex/skills/docx-formatter/`"),
+        ("Cursor", "`<项目>/.cursor/skills/docx-formatter/`", "`~/.cursor/skills/docx-formatter/`"),
+        ("WorkBuddy", "`<项目>/.workbuddy/skills/docx-formatter/`", "`~/.workbuddy/skills/docx-formatter/`"),
+        ("其他框架", "`<项目>` 下助手能发现 `SKILL.md` 的任意位置（须放在项目文件夹内）", "当前用户主目录下助手能发现 `SKILL.md` 的任意位置"),
+    ],
+    col_widths=[2.6, 6.4, 5.4], font_size=9)
+add_body(doc, "放在项目级的好处是技能随仓库走，提交后每个打开该项目的人都能自动获得这套排版能力；放在用户级的好处是当前用户的所有项目都能用，无需逐个项目复制，安装后在对话中以斜杠引用该技能，例如 `/docx-formatter`。")
+add_h2(doc, "1.4 方式四：npx")
+add_code_block(doc, "npx skills add https://github.com/CP-here/docx-formatter-skill --skill docx-formatter")
+add_body(doc, "安装完成后重启助手会话，使技能索引刷新。")
+
+# ============ 二、功能矩阵 ============
+add_h1(doc, "二、功能矩阵")
 add_body(doc, "技能共包含 20 个模块，其中 13 个默认启用，2 个按需生成，5 个为可选模块，仅在明确要求时启用。")
 add_table_caption(doc, "功能矩阵总览")
 add_data_table(doc,
@@ -147,8 +175,8 @@ add_data_table(doc,
     ],
     col_widths=[3.4, 1.6, 9.4], font_size=9)
 
-# ============ 二、如何开始 ============
-add_h1(doc, "二、如何开始")
+# ============ 三、如何开始 ============
+add_h1(doc, "三、如何开始")
 add_body(doc, "本技能为函数库，不含可执行入口：docx_layout_kit.py 无 main() 函数，直接运行不产生任何输出。Agent 生成文档的方式是编写调用脚本，导入库函数后按文档结构依次调用。")
 add_body(doc, "Agent 生成文档前应先阅读 scripts/_build_readme_docx.py。该文件是本技能的标准骨架，从 setup_document() 到 doc.save() 的完整调用顺序均在其正文示范；它同时用于生成项目根目录的 README.docx，因而始终与库保持同步。")
 add_table_caption(doc, "参考文件")
@@ -162,9 +190,9 @@ add_data_table(doc,
     col_widths=[4.4, 10.0], font_size=9.5)
 add_body(doc, "标准流程为：Agent 阅读 _build_readme_docx.py 的 import 段与调用顺序，复制 docx_layout_kit.py 到工作目录（文档含公式时再加 omml_math_kit.py 与 formula_templates.py），新建调用脚本并按范例顺序写入内容，运行后用 docx_validator.py 验证。")
 
-# ============ 三、核心模块 ============
-add_h1(doc, "三、核心模块")
-add_h2(doc, "3.1 标准排版")
+# ============ 四、核心模块 ============
+add_h1(doc, "四、核心模块")
+add_h2(doc, "4.1 标准排版")
 add_body(doc, "标题使用黑体，正文使用宋体。文档标题一号 26pt 居中加粗，一级标题三号 16pt 左对齐，二级与三级标题小四 12pt。正文小四 12pt 两端对齐，首行缩进 2 字符，全文 1.5 倍行距。纸张为 A4，页边距上下 2.54cm、左右 3.18cm。分级页码：封面与目录不显示页码，正文从第 1 页起算，页脚居中放置五号 Times New Roman 的 PAGE 域。封面页的居中标题块由顶部留白定位，留白高度按版心高比例换算，换纸张或页边距时自动等比适配。各级标题的字体、字号、加粗与黑色统一写在 Word 内置 Heading 样式上，标题文字本身不带直接字符格式；这样既覆盖了样式默认的蓝色与模板主题字体引用，也让 Word 更新目录域时无法把标题字体搬进条目，目录条目因而严格按样式呈现。中西文字体分离：正文西文用 Times New Roman 衬线体，标题西文用 Arial 无衬线体，对齐 NJUThesis 的字体族设计。")
 add_table_caption(doc, "标准排版构件函数")
 add_data_table(doc,
@@ -186,7 +214,7 @@ add_h1(doc, "一、实验目的")
 add_body(doc, "本实验验证傅里叶分析方法在周期信号处理中的有效性。")""")
 
 # ============ 核心模块·排版预设 ============
-add_h2(doc, "3.2 排版预设")
+add_h2(doc, "4.2 排版预设")
 add_body(doc, "排版参数集中在 docx_layout_kit.py 顶部的 PRESETS 字典中，按标题、正文、分点、图注、页面、目录、封面等分组管理，各排版函数统一读取当前激活的预设。")
 add_item_para(doc, "set_preset 整套切换排版参数，", "须在 setup_document 之前调用，默认预设与标准排版一致")
 add_item_para(doc, "新增预设", "只需向 PRESETS 追加一份同结构的嵌套字典")
@@ -210,7 +238,7 @@ add_data_table(doc,
     col_widths=[1.8, 6.2, 6.4], font_size=8.5)
 
 # ============ 核心模块·OMML 数学公式 ============
-add_h2(doc, "3.3 OMML 数学公式")
+add_h2(doc, "4.3 OMML 数学公式")
 add_body(doc, "公式构建器提供一组组合函数，直接生成 OMML XML 并插入文档，产物为 Word 原生可编辑公式，与手动插入的公式完全一致。下表为全部构建函数：")
 add_table_caption(doc, "OMML 公式构建函数")
 add_data_table(doc,
@@ -292,7 +320,7 @@ add_eq_para(doc, eq2)
 add_body(doc, "求和符号必须使用 sumOp 构建。求和若采用 n 元运算符加空上标的写法，Word 会渲染一个不可见的上标占位框，导致文件看起来损坏；sumOp 改用下标结构配合 Unicode ∑ 实现，彻底规避该问题。所有接收子元素的函数内部自动展平嵌套列表，防止 XML 拼接错误。")
 
 # ============ 核心模块·引用上标 ============
-add_h2(doc, "3.4 引用上标")
+add_h2(doc, "4.4 引用上标")
 add_body(doc, "正文中的参考文献标记自动渲染为上标，适用于 add_body 与 add_item_para，支持三种格式：")
 add_table_caption(doc, "引用上标支持的格式")
 add_data_table(doc,
@@ -307,7 +335,7 @@ add_code_block(doc, 'add_body(doc, "傅里叶分析方法在信号处理任务�
 add_body(doc, "本段即为实际渲染效果：傅里叶分析方法在信号处理任务中表现出色[1]，后续研究[2,3]进一步验证了这一结论，系统综述见[1-3]。")
 
 # ============ 核心模块·参考文献列表 ============
-add_h2(doc, "3.5 参考文献列表")
+add_h2(doc, "4.5 参考文献列表")
 add_body(doc, "add_bibliography 生成 GB/T 7714-2015 顺序编码制参考文献表，格式对齐 NJUThesis LaTeX 模板，与正文引用上标配套使用：正文中的 [1] 指向条目列表第一项，以此类推。")
 add_item_para(doc, "章节标题：", "黑体三号加粗居中，使用 Heading 1 样式，进入目录")
 add_item_para(doc, "条目：", "宋体五号，两端对齐，1.5 倍行距，悬挂缩进 2 字符，折行后与序号后文字对齐")
@@ -332,7 +360,7 @@ add_bibliography(doc, [
 add_body(doc, '条目按文献类型组织，传入时不带序号：期刊以 [J] 标注，图书 [M]，会议论文 [C]，学位论文 [D]，标准 [S]，电子资源 [EB/OL] 并附更新日期与访问路径。多作者用逗号分隔，三位以上作者取前三名加“等”或"et al"。章节标题默认为“参考文献”，可通过 title 参数自定义。')
 
 # ============ 核心模块·表格框图流程图 ============
-add_h2(doc, "3.6 表格框图流程图")
+add_h2(doc, "4.6 表格框图流程图")
 add_body(doc, "流程图由 Word 表格与 Unicode 箭头构成，不使用图片，不使用 emoji，产物在任何 Word 版本中均可编辑。纵向流程图由横向箭头行与向下箭头交替堆叠而成，以信号处理流程为例：")
 add_code_block(doc, """add_arrow_row(doc, "① 时域采样", "离散信号 x(n)")
 add_arrow_down(doc)
@@ -375,7 +403,7 @@ add_body(doc, "并排框用于表达地位相等的并列分支，多行框用�
 add_body(doc, "横向箭头行是本技能的特色构件。采用 3 列表格实现，左右等宽并锁定固定布局，箭头恒位于整表几何中心，与两侧文字长短无关；中间竖线融合后左右单元格视觉连通。固定布局同时保证换页、缩放或在不同 Word 版本中打开时列宽不发生重排。左右地位相等时不加底纹，层级不同时可传 left_shade 参数生成左灰右白效果，用于表达预处理阶段向决策阶段一类的层级转换。")
 
 # ============ 核心模块·分层架构图 ============
-add_h2(doc, "3.7 分层架构图")
+add_h2(doc, "4.7 分层架构图")
 add_body(doc, "add_layered_architecture 以表格框图堆叠表达多层架构，全宽层与并列层可混合使用，层间自动插入间隔段落。以信号处理系统为例：")
 add_code_block(doc, """add_layered_architecture(doc, [
     ["采集层：传感器阵列 / 信号调理 / 抗混叠滤波"],
@@ -397,7 +425,7 @@ add_layered_architecture(doc, [
 add_fig_caption(doc, "信号处理系统分层架构")
 
 # ============ 核心模块·图表自动编号 ============
-add_h2(doc, "3.8 图表自动编号")
+add_h2(doc, "4.8 图表自动编号")
 add_body(doc, "图标题与表标题由内部计数器自动编号，无需手动填写编号。图标题位于图下方，表标题位于表上方，两类编号相互独立。")
 add_code_block(doc, """add_box(doc, "系统架构")
 add_fig_caption(doc, "信号处理系统架构")    # 自动生成 图1 信号处理系统架构
@@ -407,7 +435,7 @@ add_data_table(doc, headers, rows, col_widths)""")
 add_body(doc, "setup_document 自动调用 reset_counters，每次生成文档均从图1与表1开始。add_fig_caption 传入空字符串时生成纯间距段落且不递增编号。add_note 在图下方添加居中斜体图注。")
 
 # ============ 核心模块·代码块与数据表 ============
-add_h2(doc, "3.9 代码块与数据表")
+add_h2(doc, "4.9 代码块与数据表")
 add_body(doc, "add_code_block 以 Consolas 等宽字体渲染代码内容，默认 9pt，浅灰底纹，无首行缩进，逐行成段：")
 add_code_block(doc, 'add_code_block(doc, "python docx_validator.py output.docx --verbose")')
 add_body(doc, "add_data_table 生成数据型表格，灰色表头黑体加粗居中，固定列宽，数据行末列左对齐、其余列居中：")
@@ -437,7 +465,7 @@ add_math_to_cell(t.cell(4, 2), inlineMath([sumOp([r("k")], [sub("a", "k")])]))
 add_body(doc, "辅助函数 set_table_border 与 set_cell_shading 分别控制表格边框与单元格底纹。")
 
 # ============ 核心模块·封面 ============
-add_h2(doc, "3.10 封面")
+add_h2(doc, "4.10 封面")
 add_body(doc, "封面按需生成，默认不插入，由 add_cover_page 生成，须在写任何其它内容之前调用。封面为居中标题块：大标题黑体 26pt、副标题黑体 20pt、单位与日期宋体 15pt，其中副标题、单位、日期都可以省略，省略则该行不生成。")
 add_code_block(doc, """doc = setup_document()
 add_cover_page(doc, "文档标题", subtitle="技术方案",
@@ -458,7 +486,7 @@ add_body(doc, "标题块用顶部留白定位，而不是垂直居中：标题�
 add_body(doc, "封面独立成一节，不显示页码；其后的目录节同样不显示页码，正文从第 1 页起算。用了封面就不必再调用 add_title。留白由空段落构成，Word 与 WPS 正常渲染；若交付链路中经过会剥离空段落的 docx 转网页转换器，留白可能丢失。")
 
 # ============ 核心模块·目录生成 ============
-add_h2(doc, "3.11 目录生成")
+add_h2(doc, "4.11 目录生成")
 add_body(doc, '目录按需生成，默认不插入。标题函数使用 Word 内置 Heading 样式，add_toc 在封面之后、正文之前插入目录域，在 Word 中按住 Ctrl 并点击条目可跳转至对应标题。Word 打开文档时提示更新域，选择"是"即生成目录条目；目录条目由域在 Word 更新时计算生成，更新前显示占位文字。')
 add_code_block(doc, """doc = setup_document()
 add_title(doc, "实验报告")
@@ -477,7 +505,7 @@ add_data_table(doc,
 add_body(doc, "目录标题黑体三号居中。目录内的章标题行用黑体小四，一级节标题行与二级节标题行用宋体小四，行距统一为固定值 20 磅；章标题行段前 6 磅、段后 0 磅并居左书写，一级节标题行缩进 1 个汉字符，二级节标题行缩进 2 个汉字符，这两种节标题行的段前段后均为 0 磅。三种条目依次对应文档的一级、二级、三级标题。默认层级为 1 到 3 级，传入 levels 参数可只收一至二级，文档主标题不进入目录。目录条目默认在 Word 打开文档时提示更新域并生成，由文档设置中的 w:updateFields 开关实现；传入 auto_update=False 可关闭该行为，改为在目录上右键选择更新域手动生成。目录末尾为分节符，与正文分隔并触发正文页码从 1 起算。目录条目的字体严格按上述格式呈现：章标题行黑体，一级与二级节标题行宋体。Word 更新目录域时会把标题文字的直接字符格式搬进条目，而本技能的标题一律不在文字上设字体、只把字符格式写在 Heading 样式里，Word 因此无从覆盖，条目字体不会被标题的黑体带跑。")
 
 # ============ 核心模块·页码 ============
-add_h2(doc, "3.12 页码")
+add_h2(doc, "4.12 页码")
 add_body(doc, "封面页与目录页不显示页码，页码从正文第一页起算为 1。无封面、无目录的单节文档无需处理，setup_document 已让页码从第 1 页连续编号；含目录的文档由 add_toc 自动分节，无需额外调用；有封面但不生成目录的文档，需在正文第一个标题前手动调用 start_body。")
 add_code_block(doc, """doc = setup_document()
 add_cover_page(doc, "实验报告")   # 封面页，不显示页码
@@ -496,7 +524,7 @@ add_data_table(doc,
 add_body(doc, "start_body 把此前所有节的页脚清空（封面与目录各自成节，因此都被清空），使封面与目录不显示页码；随后新建一节，页面参数沿用预设，分节符类型为下一页，因此兼作封面或目录与正文之间的分页，不要再另加分页符。正文节通过 w:pgNumType 将页码起始值设为预设 page.body_page_start，默认 1，页脚沿用居中五号 Times New Roman 的 PAGE 域。重复调用 start_body 不会重复分节，第二次起为空操作。封面以分节符结束时末节仍是空的，此时 start_body 直接复用该节作为正文节而不再新建，add_toc 也会跳过自己的前导分页符，两者共同避免多出空白页。")
 
 # ============ 核心模块·轻量文档验证 ============
-add_h2(doc, "3.13 轻量文档验证")
+add_h2(doc, "4.13 轻量文档验证")
 add_body(doc, "docx_validator.py 基于纯 Python 标准库实现，无外部依赖，在文档生成后执行 5 项结构检查：")
 add_table_caption(doc, "轻量验证检查项")
 add_data_table(doc,
@@ -513,13 +541,13 @@ add_code_block(doc, "python docx_validator.py output.docx --verbose")
 add_body(doc, "全部检查通过时退出码为 0，否则为 1。")
 
 # ============ 核心模块·安全解压与重打包 ============
-add_h2(doc, "3.14 安全解压与重打包")
+add_h2(doc, "4.14 安全解压与重打包")
 add_body(doc, "safe_extract 在解压 .docx 时拒绝符号链接并校验路径边界，防止路径遍历攻击；rezip 将目录重新打包为 .docx，确保 [Content_Types].xml 首位存储并原子写入目标文件。二者构成编辑现有文档的安全基础。")
 
-# ============ 四、可选模块 ============
-add_h1(doc, "四、可选模块")
+# ============ 五、可选模块 ============
+add_h1(doc, "五、可选模块")
 add_body(doc, "以下模块默认不启用、不检查环境、不安装依赖，仅当明确要求对应功能时使用。")
-add_h2(doc, "4.1 PDF 渲染验证")
+add_h2(doc, "5.1 PDF 渲染验证")
 add_body(doc, "将生成的 .docx 转换为 PDF 进行视觉检查。两条路径按平台择一使用：")
 add_table_caption(doc, "PDF 渲染的两条路径")
 add_data_table(doc,
@@ -541,10 +569,10 @@ python scripts/optional/office/word2pdf.py output.docx --outdir ./pdf_out
 python scripts/optional/office/word2pdf.py output.docx --pdfa""")
 add_body(doc, "其他平台或用 LibreOffice 时：")
 add_code_block(doc, "python scripts/optional/office/soffice.py convert output.docx --outdir ./pdf_out")
-add_h2(doc, "4.2 XSD 模式验证")
+add_h2(doc, "5.2 XSD 模式验证")
 add_body(doc, "对 .docx 内的 XML 部件执行 OOXML 模式深度验证，比轻量验证更严格，依赖 defusedxml：")
 add_code_block(doc, "python scripts/optional/office/validate.py output.docx")
-add_h2(doc, "4.3 编辑现有文档")
+add_h2(doc, "5.3 编辑现有文档")
 add_body(doc, "修改已有 .docx 文件内容，工作流为安全解压、合并碎片 run、编辑 XML、重新打包、验证，其中合并碎片 run 依赖 defusedxml，安全解压与重打包为纯标准库实现：")
 add_code_block(doc, """from docx_layout_kit import safe_extract, rezip
 import zipfile
@@ -554,11 +582,11 @@ with zipfile.ZipFile("input.docx", "r") as zf:
 
 # 编辑 XML 后重新打包
 rezip("./unpacked", "output.docx")""")
-add_h2(doc, "4.4 追踪修订与批注")
+add_h2(doc, "5.4 追踪修订与批注")
 add_body(doc, "accept_changes.py 通过 LibreOffice 宏接受文档中的所有追踪修订，依赖 LibreOffice；comment.py 管理批注，维护 6 个批注相关文件的交叉链接系统，依赖 defusedxml，批注 XML 模板位于 scripts/optional/templates。")
 
 # ============ 排版标准 ============
-add_h1(doc, "五、排版标准")
+add_h1(doc, "六、排版标准")
 add_body(doc, "页面为 A4 纸张，页边距上下 2.54cm、左右 3.18cm，正文行距 1.5 倍。页脚居中放置页码，五号 Times New Roman，由 PAGE 域自动编号；含封面或目录时前置部分不显示页码，正文从第 1 页起算。封面标题块用顶部留白定位，留白高度按版心高比例换算，换纸张或页边距时自动等比适配。中西文字体分离：正文西文用 Times New Roman 衬线体，标题西文用 Arial 无衬线体。间距体系对齐 NJUThesis LaTeX 模板，该模板全局行距倍数为 1.625，与 Word 1.5 倍行距的视觉效果一致。")
 add_table_caption(doc, "排版标准")
 add_data_table(doc,
@@ -583,7 +611,7 @@ add_data_table(doc,
     col_widths=[2.2, 1.5, 2.0, 5.5, 1.4, 1.4], font_size=9)
 
 # ============ 环境要求 ============
-add_h1(doc, "六、环境要求")
+add_h1(doc, "七、环境要求")
 add_body(doc, "核心排版功能仅依赖两项，Python 3.8 及以上版本与 python-docx：")
 add_code_block(doc, "pip install python-docx")
 add_body(doc, "可选功能默认不安装、不检查任何依赖，仅在明确要求对应功能时按需安装：")
@@ -601,7 +629,7 @@ add_data_table(doc,
     col_widths=[5.4, 9.0], font_size=9.5)
 
 # ============ 文件结构 ============
-add_h1(doc, "七、文件结构")
+add_h1(doc, "八、文件结构")
 add_code_block(doc, """docx-formatter/
 ├── SKILL.md                    # 技能指令文件
 ├── README.md                   # 项目说明
@@ -628,34 +656,6 @@ add_code_block(doc, """docx-formatter/
             ├── helpers/      # 通用辅助函数包
             ├── schemas/      # OOXML 模式文件
             └── validators/   # 验证器""")
-
-# ============ 八、安装 ============
-add_h1(doc, "八、安装")
-add_h2(doc, "8.1 方式一：让 Agent 帮你装（推荐）")
-add_body(doc, "在聊天窗口中直接输入“帮我安装 https://github.com/CP-here/docx-formatter-skill”，让 Agent 安装；安装完成后直接让它用本技能排版即可。")
-add_h2(doc, "8.2 方式二：下载 Release 压缩包")
-add_body(doc, "从 Releases 页面的 Assets 下载 `docx-formatter.zip`，按客户端类型安装：")
-add_item_para(doc, "支持上传技能压缩包或技能市场的客户端：", "腾讯 WorkBuddy（SkillHub 上传 zip）、豆包桌面版 / 豆包工作（技能·连接器面板）、阿里千问办公 / QoderWork、通义桌面 agent、Kimi Work、智谱 AutoGLM / AutoClaw、百度 DuMate（百度搭子）、阶跃 AI 桌面 / OpenClaw、有道 LobsterAI（技能商店 / 本地导入）、飞书 AI、TRAE Work、扣子 Coze 等，将 zip 或解压后的技能文件夹按各客户端“上传技能 / 导入 Skill / 本地技能”入口添加即可；")
-add_item_para(doc, "代码或 agent 类客户端：", "腾讯 CodeBuddy、字节 TRAE、DeepSeek Harness、OpenCode，以及兼容 Claude / Cursor 技能格式的客户端，将解压后的 `docx-formatter/` 放入对应技能目录（如 `~/.claude/skills/`、`~/.cursor/skills/`、项目内 `.agents/skills/` 等）；")
-add_item_para(doc, "其他不支持手动安装技能的桌面助手：", "如 ChatGPT 桌面版、统信 UOS AI、Chatbox 及各厂商“电脑版 / 桌面版”对话客户端，可直接提供 zip 文件让 Agent 自行安装。")
-add_body(doc, "该压缩包已剔除样例文档与展示图，仅保留运行所需的 `README.md`、`SKILL.md`、`scripts/` 与 `LICENSE`。")
-add_h2(doc, "8.3 方式三：从仓库复制")
-add_body(doc, "`git clone` 本仓库后，把仓库根目录整体复制到技能目录即可，目录名与 SKILL.md 中 name 字段保持一致。项目级与用户级路径如下：")
-add_table_caption(doc, "项目级与用户级技能目录")
-add_data_table(doc,
-    ["客户端", "项目级路径", "用户级路径"],
-    [
-        ("Claude Code", "`<项目>/.claude/skills/docx-formatter/`", "`~/.claude/skills/docx-formatter/`"),
-        ("Codex", "`<项目>/.codex/skills/docx-formatter/`", "`~/.codex/skills/docx-formatter/`"),
-        ("Cursor", "`<项目>/.cursor/skills/docx-formatter/`", "`~/.cursor/skills/docx-formatter/`"),
-        ("WorkBuddy", "`<项目>/.workbuddy/skills/docx-formatter/`", "`~/.workbuddy/skills/docx-formatter/`"),
-        ("其他框架", "`<项目>` 下助手能发现 `SKILL.md` 的任意位置（须放在项目文件夹内）", "当前用户主目录下助手能发现 `SKILL.md` 的任意位置"),
-    ],
-    col_widths=[2.6, 6.4, 5.4], font_size=9)
-add_body(doc, "放在项目级的好处是技能随仓库走，提交后每个打开该项目的人都能自动获得这套排版能力；放在用户级的好处是当前用户的所有项目都能用，无需逐个项目复制，安装后在对话中以斜杠引用该技能，例如 `/docx-formatter`。")
-add_h2(doc, "8.4 方式四：npx")
-add_code_block(doc, "npx skills add https://github.com/CP-here/docx-formatter-skill --skill docx-formatter")
-add_body(doc, "安装完成后重启助手会话，使技能索引刷新。")
 
 # ============ 九、使用方式 ============
 add_h1(doc, "九、使用方式")
