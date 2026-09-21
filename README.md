@@ -13,7 +13,7 @@ docx-formatter 将文本或 Markdown 内容排版为专业的中文 Word 文档�
 
 ### 方式一：让 Agent 帮你装（推荐）
 
-在聊天窗口中直接输入“帮我安装 https://github.com/CP-here/docx-formatter-skill ”，让 Agent 安装；安装完成后直接让它用本技能排版即可。
+在聊天窗口中直接输入“ 帮我安装 https://github.com/CP-here/docx-formatter-skill ”，让 Agent 安装；安装完成后直接让它用本技能排版即可。
 
 ### 方式二：下载 Release 压缩包
 
