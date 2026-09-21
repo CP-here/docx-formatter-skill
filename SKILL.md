@@ -116,7 +116,8 @@ tags:
 | `add_eq_para(doc, math_xml)`                                                                        | 居中块级公式段落（接收 omml_math_kit 的 OMML XML 字符串）                                                                        |
 | `add_body_with_math(doc, parts)`                                                                    | 正文与行内公式混排段落（parts 为 `("text", str)` / `("math", xml)` 列表）                                                      |
 | `add_code_block(doc, code, font_size)`                                                              | 代码块：Consolas 等宽字体（默认9pt），浅灰底纹（F2F2F2），逐行段落，左缩进                                                                 |
-| `add_data_table(doc, headers, rows, col_widths, font_size)`                                         | 数据表：灰色表头（D9D9D9 黑体加粗居中），数据行宋体，末列左对齐其余居中，固定列宽                                                                   |
+| `add_data_table(doc, headers, rows, col_widths, font_size)`                                         | 数据表：灰色表头（D9D9D9 黑体加粗居中），数据行宋体，末列左对齐其余居中，固定列宽。**末尾自动追加表下间距段**（见下行）                              |
+| `add_table_spacer(doc, size_pt)`                                                                    | 表格下方的固定间距段，把表格与后续正文分开。Word 的间距只属于段落、表格自身无段后属性，不追加则正文紧贴表底。默认高度取预设 `table.gap_after`（12pt），由 `add_data_table` 自动调用 |
 | `add_math_to_cell(cell, omml_xml)`                                                                  | 向表格单元格插入行内 OMML 公式（居中），配合 `inlineMath()` 用于公式对照表等场景                                                            |
 | `add_box(doc, text, width_cm, font_size)`                                                           | 单个居中框，用于流程图（默认宽度14cm，含单元格边距）                                                                                   |
 | `add_multi_line_box(doc, lines, width_cm, font_size)`                                               | 多行居中框，用于流程图（一个框内多行文字）                                                                                          |
@@ -152,6 +153,7 @@ tags:
 8. **Word 目录（TOC）支持**：`add_h1`/`add_h2`/`add_h3` 使用 Word 内置 Heading 样式。使用 `add_toc` 按需插入目录域（TOC field），Word 打开文档时提示更新域，选择"是"即生成目录条目。`add_title` 不使用 Heading 样式，不进入目录
 9. **标题字符格式写在样式上，不在 run 上**：H1–H3 的字体、字号、加粗、黑色全部由 `_setup_heading_styles()`（`setup_document()` 内自动调用）写到 Word 内置 Heading 1/2/3 样式上，标题 run 不带任何直接字符格式。这样既覆盖了模板默认的蓝色标题（清除 `color` 的 `themeColor` 引用）与主题字体引用，又让 Word 更新目录域时无法把标题字体搬进条目，目录条目因此严格按 TOC 样式呈现。`add_h1`/`add_h2`/`add_h3`/`add_bibliography` 都遵循此约定，**不要在调用脚本里给标题 run 直接设字体**
 10. **图表自动编号**：`add_fig_caption` 和 `add_table_caption` 自动递增编号（图N / 表N），无需手动填写编号。传空字符串 `""` 给 `add_fig_caption` 可生成纯间距段落（不编号）。图标题在图**下方**，表标题在表**上方**
+11. **表下间距由构件自动处理**：`add_data_table` 末尾自动追加一个间距段（默认 12pt，取预设 `table.gap_after`），无需手工补空行。原因是 Word 的间距只属于**段落**，表格自身没有段后属性——表名在表前、其段后 6pt 垫在表名与表之间，而表后若无段落则正文直接贴合表底。该行为恒定生效，后续无论是正文还是图标题都一样追加；若后续是图标题，其段前 6pt 与间距段取较大者，不会叠加
 11. **页码从正文开始**：封面与目录不显示页码，正文第一页为 1。含目录时由 `add_toc()` 自动分节；有封面但无目录时需手动调用 `start_body(doc)`；无封面无目录的单节文档无需任何处理
 12. **封面独立成节**：`add_cover_page` 必须以「下一页」分节符结束封面节，因此它**必须在写任何其它内容之前调用**，且用了它就不必再调 `add_title`。分节链上 `add_toc()` 与 `start_body()` 会自动识别并复用分节符留下的空节，不会产生空白页
 

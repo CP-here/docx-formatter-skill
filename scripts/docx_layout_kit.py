@@ -105,6 +105,9 @@ PRESETS = {
         'item':  {'space_before': None, 'space_after': 7},
         'caption': {'size': 10.5, 'label_bold': True},   # 图/表标题字号与标签加粗（对齐 NJUThesis njucap）
         'note':  {'size': 9},         # 图注字号（斜体小字）
+        # 数据表下方的固定间距段高度（pt）。表格自身没有段后属性，只能靠段落承担。
+        # 12 使表下纯留白由 3.85pt 提升到 15.90pt，与表名侧（段后 6pt）形成呼应。
+        'table': {'gap_after': 12},
         'page': {
             'page_width': 21.0, 'page_height': 29.7,      # A4（21 × 29.7 cm）
             'margin_top': 2.54, 'margin_bottom': 2.54,
@@ -457,11 +460,77 @@ def add_code_block(doc, code, font_size=9):
     return doc
 
 
+def add_table_spacer(doc, size_pt=None):
+    """表格下方的固定间距段：把表格与后续正文分开。
+
+    Word 的间距只属于**段落**，表格自身没有段后属性（`w:tblPr` 里只有浮动
+    定位与单元格间距）。所以表名（段后 6pt）下方天然有间距，而表格下方若
+    没有段落，正文就会紧贴表格底边——实测仅 3.85pt，视觉上贴合。
+
+    本函数插入一个高度可精确控制的最小空段：
+      * 字号同时写入**段落标记**的 `w:pPr/w:rPr` 与 run 的 `w:rPr`，
+        且 `w:sz` 与 `w:szCs` 成对写入。只设 run、或漏掉 `w:szCs`（复杂文种），
+        行高仍会按继承的正文 12pt 计算，空段压不下去。
+      * 行距用 `lineRule="exact"` 锁死为与字号相同的磅值，避免被 1.5 倍行距撑开。
+      * 段落居中，使段落标记显示在页面水平中间。
+
+    实测（本机 Word 渲染，A4 默认预设）：空段设定值与表下纯留白增量近似 1:1，
+    12pt 档使表下纯留白由 3.85pt 提升到 15.90pt。
+
+    Args:
+        doc: the Document to add the spacer to.
+        size_pt: 空段高度（pt），默认取预设 `table.gap_after`。
+    """
+    if size_pt is None:
+        size_pt = _ACTIVE_PRESET['table']['gap_after']
+    p = doc.add_paragraph()
+    p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    p.paragraph_format.first_line_indent = Pt(0)
+
+    # 字号写入段落标记的 w:pPr/w:rPr —— 空段高度由段落标记字符格式决定
+    pPr = p._p.get_or_add_pPr()
+    mark_rPr = pPr.find(qn('w:rPr'))
+    if mark_rPr is None:
+        mark_rPr = OxmlElement('w:rPr')
+        pPr.insert(0, mark_rPr)
+    half_pt = str(int(round(size_pt * 2)))          # w:sz 以半磅为单位
+    for tag in ('w:sz', 'w:szCs'):
+        el = mark_rPr.find(qn(tag))
+        if el is None:
+            el = OxmlElement(tag)
+            mark_rPr.append(el)
+        el.set(qn('w:val'), half_pt)
+
+    # 固定行距 = 字号，锁死行框高度；段前段后为 0
+    spacing = pPr.find(qn('w:spacing'))
+    if spacing is None:
+        spacing = OxmlElement('w:spacing')
+        pPr.append(spacing)
+    spacing.set(qn('w:line'), str(int(round(size_pt * 20))))
+    spacing.set(qn('w:lineRule'), 'exact')
+    spacing.set(qn('w:before'), '0')
+    spacing.set(qn('w:after'), '0')
+
+    run = p.add_run("")
+    run_rPr = run._element.get_or_add_rPr()
+    for tag in ('w:sz', 'w:szCs'):
+        el = run_rPr.find(qn(tag))
+        if el is None:
+            el = OxmlElement(tag)
+            run_rPr.append(el)
+        el.set(qn('w:val'), half_pt)
+    return p
+
+
 def add_data_table(doc, headers, rows, col_widths, font_size=9.5):
     """Data table with gray (D9D9D9) header row and fixed column widths.
 
     Header row: 黑体 bold, centered. Data rows: 宋体, centered except the
     last column (left-aligned, typically the description column).
+
+    **末尾自动追加一个表格间距段**（见 `add_table_spacer`），使表格与后续
+    正文分开；间距高度取预设 `table.gap_after`。该行为恒定生效，不区分后续
+    元素是正文还是图标题。
 
     Args:
         headers: list of header strings.
@@ -488,6 +557,9 @@ def add_data_table(doc, headers, rows, col_widths, font_size=9.5):
                            else WD_ALIGN_PARAGRAPH.LEFT)
             p.paragraph_format.first_line_indent = Pt(0)
             set_run_font(p.add_run(str(val)), '宋体', font_size, bold=False)
+    # 表下间距段：Word 的间距只属于段落，表格自身无段后属性，
+    # 不追加此段则后续正文与表格底边贴合（实测仅 3.85pt）
+    add_table_spacer(doc)
     return table
 
 

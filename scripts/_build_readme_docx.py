@@ -231,6 +231,7 @@ add_data_table(doc,
         ("`item`", "`space_before` / `space_after`", "分点段落间距"),
         ("`caption`", "`size`", "图/表标题字号"),
         ("`note`", "`size`", "图注字号"),
+        ("`table`", "`gap_after`", "数据表下方间距段高度（pt），默认 12"),
         ("`page`", "`page_width` / `page_height` / `margin_top` / `margin_bottom` / `margin_left` / `margin_right` / `header_distance` / `footer_distance`", "纸张尺寸（cm）与页边距、页眉页脚距离（cm）"),
         ("`toc`", "`title_font` / `title_size` / `line_spacing` / `levels`", "目录标题与条目：`levels` 按层级给出各条目的字体/字号/段前/段后/缩进（汉字符）"),
         ("`cover`", "`top_padding_ratio` / `spacer_height` / `title_*` / `subtitle_*` / `org_*` / `date_*`", "封面：顶部留白占版心高的比例、留白空段单段高（pt）、标题块各元素字体/字号/间距（pt）"),
@@ -427,6 +428,7 @@ add_fig_caption(doc, "信号处理系统分层架构")
 # ============ 核心模块·图表自动编号 ============
 add_h2(doc, "4.8 图表自动编号")
 add_body(doc, "图标题与表标题由内部计数器自动编号，无需手动填写编号。图标题位于图下方，表标题位于表上方，两类编号相互独立。")
+add_body(doc, "表下方的间距由 add_data_table 自动处理：它会在表格末尾追加一个间距段（默认 12pt，读预设 `table.gap_after`），无需手工补空行。原因是 Word 的间距只属于段落，表格自身没有段后属性——表名位于表上方、其段后 6pt 垫在表名与表之间，而表后若无段落，后续正文就会直接贴合表格底边。该行为恒定生效，后续无论是正文还是图标题都同样追加。")
 add_code_block(doc, """add_box(doc, "系统架构")
 add_fig_caption(doc, "信号处理系统架构")    # 自动生成 图1 信号处理系统架构
 
@@ -601,6 +603,7 @@ add_data_table(doc,
         ("块级公式", "—", "—", "居中", "6pt", "6pt"),
         ("图标题", "宋体", "五号 10.5pt", "标签加粗，全角空格分隔，居中，位于图下方", "6pt", "12pt"),
         ("表标题", "宋体", "五号 10.5pt", "标签加粗，全角空格分隔，居中，位于表上方", "12pt", "6pt"),
+        ("表下间距段", "—", "12pt", "空段，居中，固定行距 12pt，无文字；由 add_data_table 自动追加", "0", "0"),
         ("封面·大标题", "黑体", "26pt", "居中，位于顶部留白之后", "—", "8pt"),
         ("封面·副标题", "黑体", "20pt", "居中", "0", "60pt"),
         ("封面·单位与日期", "宋体", "15pt", "居中", "日期 8pt", "0"),
