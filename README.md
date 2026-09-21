@@ -7,7 +7,7 @@ docx-formatter 将文本或 Markdown 内容排版为专业的中文 Word 文档�
 
 *图：左侧为 README.md 源码，右侧为同一内容经本技能排版生成的 README.docx。*
 
-技能采用单引擎架构，仅依赖 Python 3.8 以上版本与 python-docx。数学公式由 omml_math_kit.py 直接生成 OMML XML，即 Word 原生公式格式，公式在 Word 中可二次编辑，无需 Node.js 或任何外部转换工具。
+技能采用单引擎架构，核心排版功能仅依赖 Python 3.8 及以上版本与 python-docx。数学公式由 omml_math_kit.py 直接生成 OMML XML，即 Word 原生公式格式，公式在 Word 中可二次编辑，无需 Node.js、LaTeX 渲染器或 Pandoc 等任何外部转换工具。
 
 ## 功能矩阵
 
@@ -82,6 +82,20 @@ add_body(doc, "本实验验证傅里叶分析方法在周期信号处理中的�
 - 新增预设只需向 PRESETS 追加一份同结构的嵌套字典
 - 支持中西文字体分离，开启后西文使用 Times New Roman，中文保持原有字体不变
 - 封面留白比例位于预设的封面分组内，留白高度由它乘以版心高得出，换纸张与页边距时封面位置随之等比适配
+
+**分组结构**：
+
+| 分组 | 键 | 说明 |
+| --- | --- | --- |
+| `west` | `separate` / `body` / `head` | 中西文字体分离开关及西文正文/标题字体（默认关闭） |
+| `title`\~`h3` | `font` / `size` / `bold` / `color` / `line_spacing` / `space_before` / `space_after` | 标题样式 |
+| `body` | `font` / `size` / `line_spacing` / `first_line_indent` / `space_before` / `space_after` | 正文；间距为 `None` 表示不设置、沿用样式继承（默认不设段间距） |
+| `item` | `space_before` / `space_after` | 分点段落间距 |
+| `caption` | `size` | 图/表标题字号 |
+| `note` | `size` | 图注字号 |
+| `page` | `page_width` / `page_height` / `margin_top` / `margin_bottom` / `margin_left` / `margin_right` / `header_distance` / `footer_distance` | 纸张尺寸（cm）与页边距、页眉页脚距离（cm） |
+| `toc` | `title_font` / `title_size` / `line_spacing` / `levels` | 目录标题与条目：`levels` 按层级给出各条目的字体/字号/段前/段后/缩进（汉字符） |
+| `cover` | `top_padding_ratio` / `spacer_height` / `title_*` / `subtitle_*` / `org_*` / `date_*` | 封面：顶部留白占版心高的比例、留白空段单段高（pt）、标题块各元素字体/字号/间距（pt） |
 
 ### OMML 数学公式
 
@@ -388,7 +402,7 @@ python scripts/optional/office/soffice.py convert output.docx --outdir ./pdf_out
 
 ### XSD 模式验证
 
-对 .docx 内的 XML 部件执行 OOXML 模式深度验证，比轻量验证更严格，依赖 lxml：
+对 .docx 内的 XML 部件执行 OOXML 模式深度验证，比轻量验证更严格，依赖 defusedxml：
 
 ```bash
 python scripts/optional/office/validate.py output.docx
@@ -396,7 +410,7 @@ python scripts/optional/office/validate.py output.docx
 
 ### 编辑现有文档
 
-修改已有 .docx 文件内容，工作流为安全解压、合并碎片 run、编辑 XML、重新打包、验证：
+修改已有 .docx 文件内容，工作流为安全解压、合并碎片 run、编辑 XML、重新打包、验证，其中合并碎片 run 依赖 defusedxml，安全解压与重打包为纯标准库实现：
 
 ```python
 from docx_layout_kit import safe_extract, rezip
@@ -411,7 +425,7 @@ rezip("./unpacked", "output.docx")
 
 ### 追踪修订与批注
 
-accept_changes.py 通过 LibreOffice 宏接受文档中的所有追踪修订；comment.py 管理批注，维护 6 个批注相关文件的交叉链接系统，批注 XML 模板位于 scripts/optional/templates。
+accept_changes.py 通过 LibreOffice 宏接受文档中的所有追踪修订，依赖 LibreOffice；comment.py 管理批注，维护 6 个批注相关文件的交叉链接系统，依赖 defusedxml，批注 XML 模板位于 scripts/optional/templates。
 
 ## 排版标准
 
@@ -437,13 +451,22 @@ accept_changes.py 通过 LibreOffice 宏接受文档中的所有追踪修订；c
 
 ## 环境要求
 
-必需依赖仅两项，Python 3.8 以上版本与 python-docx：
+核心排版功能仅依赖两项，Python 3.8 及以上版本与 python-docx：
 
 ```bash
 pip install python-docx
 ```
 
-可选依赖按需安装：Windows 上渲染 PDF 所需的 pywin32（配合本机 Word），LibreOffice 用于非 Windows 平台的 PDF 渲染与接受追踪修订，lxml 用于 XSD 模式验证，Poppler 的 pdftoppm 用于 PDF 转图片检查，pandoc 用于读取现有文档内容。
+可选功能默认不安装、不检查任何依赖，仅在明确要求对应功能时按需安装：
+
+| 可选功能 | 需要什么 |
+| --- | --- |
+| PDF 渲染验证（Windows Word 路径） | 本机 Microsoft Word 与 `pywin32`（`pip install pywin32`） |
+| PDF 渲染验证（LibreOffice 路径） | LibreOffice（`soffice` 命令行） |
+| 接受全部追踪修订 | LibreOffice |
+| XSD 模式验证 | `defusedxml` |
+| 编辑现有文档与批注管理 | `defusedxml` |
+| 追踪修订核验（validate.py --author） | `git` 命令行 |
 
 ## 文件结构
 
@@ -478,39 +501,39 @@ docx-formatter/
 
 ## 安装
 
-### 方式一：`npx skills`（推荐）
+### 方式一：让 Agent 帮你装（推荐）
+
+在聊天窗口中直接输入“帮我安装 https://github.com/CP-here/docx-formatter-skill”，让 Agent 安装；安装完成后直接让它用本技能排版即可。
+
+### 方式二：下载 Release 压缩包
+
+从 Releases 页面的 Assets 下载 `docx-formatter.zip`，按客户端类型安装：
+
+- 支持上传技能压缩包或技能市场的客户端：腾讯 WorkBuddy（SkillHub 上传 zip）、豆包桌面版 / 豆包工作（技能·连接器面板）、阿里千问办公 / QoderWork、通义桌面 agent、Kimi Work、智谱 AutoGLM / AutoClaw、百度 DuMate（百度搭子）、阶跃 AI 桌面 / OpenClaw、有道 LobsterAI（技能商店 / 本地导入）、飞书 AI、TRAE Work、扣子 Coze 等，将 zip 或解压后的技能文件夹按各客户端“上传技能 / 导入 Skill / 本地技能”入口添加即可；
+- 代码或 agent 类客户端：腾讯 CodeBuddy、字节 TRAE、DeepSeek Harness、OpenCode，以及兼容 Claude / Cursor 技能格式的客户端，将解压后的 `docx-formatter/` 放入对应技能目录（如 `~/.claude/skills/`、`~/.cursor/skills/`、项目内 `.agents/skills/` 等）；
+- 其他不支持手动安装技能的桌面助手：如 ChatGPT 桌面版、统信 UOS AI、Chatbox 及各厂商“电脑版 / 桌面版”对话客户端，可直接提供 zip 文件让 Agent 自行安装。
+
+该压缩包已剔除样例文档与展示图，仅保留运行所需的 `SKILL.md`、`scripts/` 与 `LICENSE`。
+
+### 方式三：从仓库复制
+
+`git clone` 本仓库后，把仓库根目录整体复制到技能目录即可，目录名与 SKILL.md 中 name 字段保持一致。项目级与用户级路径如下：
+
+| 客户端 | 项目级路径 | 用户级路径 |
+| --- | --- | --- |
+| Claude Code | `<项目>/.claude/skills/docx-formatter/` | `~/.claude/skills/docx-formatter/` |
+| Codex | `<项目>/.codex/skills/docx-formatter/` | `~/.codex/skills/docx-formatter/` |
+| Cursor | `<项目>/.cursor/skills/docx-formatter/` | `~/.cursor/skills/docx-formatter/` |
+| WorkBuddy | `<项目>/.workbuddy/skills/docx-formatter/` | `~/.workbuddy/skills/docx-formatter/` |
+| 其他框架 | `<项目>` 下助手能发现 `SKILL.md` 的任意位置（须放在项目文件夹内） | 当前用户主目录下助手能发现 `SKILL.md` 的任意位置 |
+
+放在项目级的好处是技能随仓库走，提交后每个打开该项目的人都能自动获得这套排版能力；放在用户级的好处是当前用户的所有项目都能用，无需逐个项目复制，安装后在对话中以斜杠引用该技能，例如 `/docx-formatter`。
+
+### 方式四：npx
 
 ```bash
 npx skills add https://github.com/CP-here/docx-formatter-skill --skill docx-formatter
 ```
-
-### 方式二：复制到项目目录（随仓库携带）
-
-若希望某个项目内的 AI 助手都遵循本技能的排版规则，把 `docx-formatter/` 目录复制到该项目的技能目录，目录名与 SKILL.md 中 name 字段保持一致：
-
-| 客户端 | 项目级路径 |
-| --- | --- |
-| Claude Code | `<项目>/.claude/skills/docx-formatter/` |
-| Codex | `<项目>/.codex/skills/docx-formatter/` |
-| Cursor | `<项目>/.cursor/skills/docx-formatter/` |
-| WorkBuddy | `<项目>/.workbuddy/skills/docx-formatter/` |
-| 其他框架 | `<项目>` 下助手能发现 `SKILL.md` 的任意位置（须放在项目文件夹内） |
-
-放在项目级的好处是技能随仓库走，提交后每个打开该项目的人都能自动获得这套排版能力。
-
-### 方式三：复制到用户级技能目录
-
-复制到当前用户的技能目录，所有项目通用：
-
-| 客户端 | 用户级路径 |
-| --- | --- |
-| Claude Code | `~/.claude/skills/docx-formatter/` |
-| Codex | `~/.codex/skills/docx-formatter/` |
-| Cursor | `~/.cursor/skills/docx-formatter/` |
-| WorkBuddy | `~/.workbuddy/skills/docx-formatter/` |
-| 其他框架 | 当前用户主目录下助手能发现 `SKILL.md` 的任意位置 |
-
-放在用户级的好处是当前用户的所有项目都能用，无需逐个项目复制；安装后在对话中以斜杠引用该技能，例如 `/docx-formatter`。
 
 安装完成后重启助手会话，使技能索引刷新。
 

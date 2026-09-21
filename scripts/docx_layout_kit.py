@@ -2,7 +2,6 @@
 """
 docx_layout_kit.py
 Word (.docx) document builder — a library of typography and layout functions.
-Use this engine when NO OMML math formulas are needed (only text, tables, diagrams).
 
 This module is a LIBRARY, not a runnable script. It has no main() entry point:
 you import the helpers and assemble your own document in your own script.
