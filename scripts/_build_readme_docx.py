@@ -638,7 +638,7 @@ add_body(doc, "从 Releases 页面的 Assets 下载 `docx-formatter.zip`，按�
 add_item_para(doc, "支持上传技能压缩包或技能市场的客户端：", "腾讯 WorkBuddy（SkillHub 上传 zip）、豆包桌面版 / 豆包工作（技能·连接器面板）、阿里千问办公 / QoderWork、通义桌面 agent、Kimi Work、智谱 AutoGLM / AutoClaw、百度 DuMate（百度搭子）、阶跃 AI 桌面 / OpenClaw、有道 LobsterAI（技能商店 / 本地导入）、飞书 AI、TRAE Work、扣子 Coze 等，将 zip 或解压后的技能文件夹按各客户端“上传技能 / 导入 Skill / 本地技能”入口添加即可；")
 add_item_para(doc, "代码或 agent 类客户端：", "腾讯 CodeBuddy、字节 TRAE、DeepSeek Harness、OpenCode，以及兼容 Claude / Cursor 技能格式的客户端，将解压后的 `docx-formatter/` 放入对应技能目录（如 `~/.claude/skills/`、`~/.cursor/skills/`、项目内 `.agents/skills/` 等）；")
 add_item_para(doc, "其他不支持手动安装技能的桌面助手：", "如 ChatGPT 桌面版、统信 UOS AI、Chatbox 及各厂商“电脑版 / 桌面版”对话客户端，可直接提供 zip 文件让 Agent 自行安装。")
-add_body(doc, "该压缩包已剔除样例文档与展示图，仅保留运行所需的 `SKILL.md`、`scripts/` 与 `LICENSE`。")
+add_body(doc, "该压缩包已剔除样例文档与展示图，仅保留运行所需的 `README.md`、`SKILL.md`、`scripts/` 与 `LICENSE`。")
 add_h2(doc, "8.3 方式三：从仓库复制")
 add_body(doc, "`git clone` 本仓库后，把仓库根目录整体复制到技能目录即可，目录名与 SKILL.md 中 name 字段保持一致。项目级与用户级路径如下：")
 add_table_caption(doc, "项目级与用户级技能目录")

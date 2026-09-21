@@ -513,7 +513,7 @@ docx-formatter/
 - 代码或 agent 类客户端：腾讯 CodeBuddy、字节 TRAE、DeepSeek Harness、OpenCode，以及兼容 Claude / Cursor 技能格式的客户端，将解压后的 `docx-formatter/` 放入对应技能目录（如 `~/.claude/skills/`、`~/.cursor/skills/`、项目内 `.agents/skills/` 等）；
 - 其他不支持手动安装技能的桌面助手：如 ChatGPT 桌面版、统信 UOS AI、Chatbox 及各厂商“电脑版 / 桌面版”对话客户端，可直接提供 zip 文件让 Agent 自行安装。
 
-该压缩包已剔除样例文档与展示图，仅保留运行所需的 `SKILL.md`、`scripts/` 与 `LICENSE`。
+该压缩包已剔除样例文档与展示图，仅保留运行所需的 `README.md`、`SKILL.md`、`scripts/` 与 `LICENSE`。
 
 ### 方式三：从仓库复制
 

@@ -12,8 +12,10 @@ to the JS version, so formula definitions port 1:1:
     from omml_math_kit import r, sub, sup, frac, sumOp, func, paren, bracket, math, inlineMath
 
     eq = math([
-        sub("L", "LLM"), r(" = - "),
-        sumOp([r("i")], [sub("y", "i"), r(" log("), sub("p", "i"), r(")")]),
+        r("f(t) = "),
+        frac([sub("a", "0")], [r("2")]),
+        r(" + "),
+        sumOp([r("k")], [sub("a", "k"), func("cos", [r("k"), r("ωt")])]),
     ])
 
 CRITICAL NOTES (same rules as JS version):
@@ -44,12 +46,12 @@ def _flat(items):
 
 
 def r(text):
-    """Plain math text run:  r("L_total")"""
+    """Plain math text run:  r("f(t)")"""
     return "<m:r><m:t>%s</m:t></m:r>" % escape(text)
 
 
 def sub(base, sub_text):
-    """Subscript:  sub("L", "LLM") → L_LLM"""
+    """Subscript:  sub("a", "k") → a_k"""
     return (
         "<m:sSub><m:sSubPr/><m:e>%s</m:e><m:sub>%s</m:sub></m:sSub>"
         % (r(base), r(sub_text))
@@ -72,7 +74,7 @@ def frac(num_children, den_children):
 
 
 def sumOp(sub_children, body_children):
-    """Summation:  sumOp([r("i")], [sub("y","i")]) → ∑_i y_i
+    """Summation:  sumOp([r("k")], [sub("a","k")]) → ∑_k a_k
 
     IMPORTANT: returns a LIST [sum_symbol, *body]. Consumers flatten this
     automatically via _flat(). Do NOT replace with <m:nary> — empty
@@ -86,7 +88,7 @@ def sumOp(sub_children, body_children):
 
 
 def func(name, arg_children):
-    """Function with parentheses:  func("log", [sub("p","i")]) → log(p_i)"""
+    """Function with parentheses:  func("cos", [r("k"), r("ωt")]) → cos(kωt)"""
     args = "".join(_flat(arg_children))
     return (
         "<m:func><m:funcPr/><m:fName>%s</m:fName>"

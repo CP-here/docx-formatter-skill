@@ -344,10 +344,10 @@ add_bibliography(doc, [
 from omml_math_kit import r, sub, sup, frac, sumOp, func, paren, bracket, math, inlineMath
 
 # 纯数学文本
-r("E_total")
+r("f(t)")
 
-# 下标：E_loss
-sub("E", "loss")
+# 下标：a_k
+sub("a", "k")
 
 # 上标：x²
 sup("x", "2")
@@ -355,11 +355,11 @@ sup("x", "2")
 # 分式：a/b
 frac([r("a")], [r("b")])
 
-# 求和：Σ_i（不要空上标！）
-sumOp([r("i")], [sub("y", "i")])  # 返回列表，自动展平
+# 求和：Σ_k（不要空上标！）
+sumOp([r("k")], [sub("a", "k")])  # 返回列表，自动展平
 
-# 函数：log(p_i)
-func("log", [sub("p", "i")])
+# 函数：cos(kωt)
+func("cos", [r("k"), r("ωt")])
 
 # 圆括号：(a+b)
 paren([r("a+b")])
@@ -368,10 +368,10 @@ paren([r("a+b")])
 bracket([r("a+b")])
 
 # 块级公式（居中，独立行）— 传给 add_eq_para()
-math([sub("E", "loss"), r(" = -"), sumOp([r("i")], [sub("y","i"), r(" log("), sub("p","i"), r(")")])])
+math([r("f(t) = "), sub("a", "0"), r(" + "), sumOp([r("k")], [sub("a", "k"), func("cos", [r("k"), r("ωt")])])])
 
 # 行内公式（与文本混排）— 传给 add_body_with_math()
-inlineMath([sub("y", "i")])
+inlineMath([sub("a", "k")])
 ```
 
 ### 插入公式
@@ -380,11 +380,13 @@ inlineMath([sub("y", "i")])
 
 ```python
 from docx_layout_kit import add_eq_para
-from omml_math_kit import r, sub, sumOp, func, math
+from omml_math_kit import r, sub, frac, sumOp, func, math
 
 eq = math([
-    sub("L", "LLM"), r(" = - "),
-    sumOp([r("i")], [sub("y", "i"), func("log", [sub("p", "i")])]),
+    r("f(t) = "),
+    frac([sub("a", "0")], [r("2")]),
+    r(" + "),
+    sumOp([r("k")], [sub("a", "k"), func("cos", [r("k"), r("ωt")])]),
 ])
 add_eq_para(doc, eq)
 ```
@@ -397,18 +399,18 @@ from omml_math_kit import sub, inlineMath
 
 add_body_with_math(doc, [
     ("text", "其中，"),
-    ("math", inlineMath([sub("L", "LLM")])),
-    ("text", "为语言模型损失项，其计算涉及交叉熵。"),
+    ("math", inlineMath([sub("a", "k")])),
+    ("text", "为傅里叶系数，其数值由欧拉公式确定。"),
 ])
 ```
 
 ### 预定义公式（formula_templates.py）
 
-`formula_templates.py` 提供 eq1\~eq4 常用公式模板（总损失、交叉熵、对比学习 InfoNCE、LoRA 分解），可直接使用或作为新增公式的参考模式：
+`formula_templates.py` 提供 eq1\~eq4 常用公式模板，可直接使用或作为新增公式的参考模式：
 
 ```python
 from formula_templates import eq1, eq2, eq3, eq4
-add_eq_para(doc, eq2)   # 交叉熵损失
+add_eq_para(doc, eq2)
 ```
 
 ### 关键：求和符号

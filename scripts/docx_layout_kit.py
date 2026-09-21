@@ -375,9 +375,9 @@ def add_eq_para(doc, math_xml):
 
     Args:
         math_xml: OMML XML string from omml_math_kit.math(), e.g.
-            from omml_math_kit import r, sub, sumOp, func, math
-            eq = math([sub("L", "LLM"), r(" = - "),
-                       sumOp([r("i")], [sub("y", "i")])])
+            from omml_math_kit import r, sub, frac, sumOp, func, math
+            eq = math([r("f(t) = "), frac([sub("a", "0")], [r("2")]),
+                       r(" + "), sumOp([r("k")], [sub("a", "k"), func("cos", [r("k"), r("ωt")])])])
             add_eq_para(doc, eq)
     """
     p = doc.add_paragraph()
@@ -402,8 +402,8 @@ def add_body_with_math(doc, parts):
         from omml_math_kit import sub, inlineMath
         add_body_with_math(doc, [
             ("text", "其中，"),
-            ("math", inlineMath([sub("L", "LLM")])),
-            ("text", "为语言模型损失项。"),
+            ("math", inlineMath([sub("a", "k")])),
+            ("text", "为傅里叶系数，其数值由欧拉公式确定。"),
         ])
     """
     p = doc.add_paragraph()
