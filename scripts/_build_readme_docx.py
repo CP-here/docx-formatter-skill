@@ -107,7 +107,7 @@ doc = setup_document()
 _today = datetime.date.today()
 add_cover_page(doc, "docx-formatter 中文 Word 专业排版技能",
                subtitle="技能说明与排版效果样例",
-               org="陈攀", date="%d年%d月%d日" % (_today.year, _today.month, _today.day))
+               org="陈攀", date="%d年%d月" % (_today.year, _today.month))
 add_toc(doc)
 
 # ============ 开篇（无标题，对应 md 文档总标题下的引言） ============
