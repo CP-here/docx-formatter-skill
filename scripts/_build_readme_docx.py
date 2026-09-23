@@ -120,7 +120,8 @@ add_body(doc, "技能采用单引擎架构，核心排版功能仅依赖 Python 
 # ============ 一、安装 ============
 add_h1(doc, "一、安装")
 add_h2(doc, "1.1 方式一：让 Agent 帮你装（推荐）")
-add_body(doc, "在聊天窗口中直接输入“帮我安装 https://github.com/CP-here/docx-formatter-skill”，让 Agent 安装；安装完成后直接让它用本技能排版即可。")
+add_body(doc, "在聊天窗口中直接输入下面这句话，让 Agent 安装；安装完成后直接让它用本技能排版即可：")
+add_code_block(doc, "帮我安装 https://github.com/CP-here/docx-formatter-skill")
 add_h2(doc, "1.2 方式二：下载 Release 压缩包")
 add_body(doc, "从 Releases 页面的 Assets 下载 `docx-formatter.zip`，按客户端类型安装：")
 add_item_para(doc, "支持上传技能压缩包或技能市场的客户端：", "腾讯 WorkBuddy（SkillHub 上传 zip）、豆包桌面版 / 豆包工作（技能·连接器面板）、阿里千问办公 / QoderWork、通义桌面 agent、Kimi Work、智谱 AutoGLM / AutoClaw、百度 DuMate（百度搭子）、阶跃 AI 桌面 / OpenClaw、有道 LobsterAI（技能商店 / 本地导入）、飞书 AI、TRAE Work、扣子 Coze 等，将 zip 或解压后的技能文件夹按各客户端“上传技能 / 导入 Skill / 本地技能”入口添加即可；")
