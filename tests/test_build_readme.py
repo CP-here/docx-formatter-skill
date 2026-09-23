@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
-"""端到端：跑真实构建链路并检查产物结构。
+"""端到端测试：运行真实构建链路并校验产物结构。
 
-覆盖「文档结构」「OMML 输出」「代表性排版工作流」三项。
+覆盖文档结构、OMML 输出与代表性排版工作流。
 
-构建方式刻意复刻 SKILL.md 文档化的标准流程 —— 把库文件复制到工作目录
-再运行。这样既不修改任何源码（构建脚本的输出路径是写死的），也不会
-污染仓库工作区（产物落在 pytest 临时目录里）。
+构建过程复刻 SKILL.md 所述标准流程：将库文件复制到临时目录后运行。
+不修改源码（构建脚本输出路径固定），产物落在 pytest 临时目录，
+不污染仓库工作区。
 """
 import os
 import re
@@ -19,7 +19,7 @@ import pytest
 from conftest import ASSETS, REPO_ROOT, SCRIPTS
 from docx_validator import validate_docx
 
-# SKILL.md「标准流程」要求复制的文件（不含 scripts/optional/）
+# SKILL.md「标准流程」要求复制的文件，不含 scripts/optional/
 _COPIED = [
     "docx_layout_kit.py",
     "omml_math_kit.py",
@@ -27,8 +27,8 @@ _COPIED = [
     "_build_readme_docx.py",
 ]
 
-# 封面日期取自 datetime.date.today()（_build_readme_docx.py 第 110 行），
-# 每次构建都不同；比对前归一化，否则每月 1 号同步测试必然失败。
+# 封面日期由 datetime.date.today() 生成，每次构建不同；比对前需归一化，
+# 否则跨日期的同步测试会失败。
 _DATE_RE = re.compile(r"\d{4}\u5e74\d{1,2}\u6708")
 
 
@@ -78,7 +78,7 @@ def _body_paragraphs(path):
 
 
 def test_build_succeeds(built_readme):
-    """代表性工作流端到端跑通并产出非平凡大小的文件。"""
+    """代表性工作流端到端构建成功，产物大小非平凡。"""
     size = built_readme.stat().st_size
     assert size > 3000, "产物仅 %d 字节，空 docx 约 3KB" % size
 
@@ -89,7 +89,7 @@ def test_output_passes_own_validator(built_readme):
 
 
 def test_output_contains_native_omath(built_readme):
-    """公式必须是 Word 原生 OMML 对象，而不是图片或纯文本。"""
+    """公式须为 Word 原生 OMML 对象，而非图片或纯文本。"""
     count = _document_xml(built_readme).count("<m:oMath")
     assert count >= 4, "<m:oMath 出现 %d 次，期望 ≥4" % count
 
@@ -102,9 +102,9 @@ def test_output_has_toc_field(built_readme):
 
 
 def test_output_has_heading_styles(built_readme):
-    """标题须走 Word 内置 Heading 样式（否则进不了目录）。
+    """标题须使用 Word 内置 Heading 样式，否则不进入目录。
 
-    不断言 Heading3 —— 实测当前 README.docx 未使用三级标题。
+    不断言 Heading3：当前 README.docx 未使用三级标题。
     """
     doc = _document_xml(built_readme)
     with zipfile.ZipFile(str(built_readme)) as zf:
@@ -117,7 +117,7 @@ def test_output_has_heading_styles(built_readme):
 
 
 def test_output_has_superscript_citations(built_readme):
-    """正文引用标记须渲染为上标（README 列出的卖点之一）。"""
+    """正文引用标记须渲染为上标。"""
     count = _document_xml(built_readme).count('w:val="superscript"')
     assert count >= 3, "上标出现 %d 处，期望 ≥3" % count
 
@@ -129,10 +129,10 @@ def test_output_has_tables(built_readme):
 
 
 def test_committed_readme_in_sync(built_readme):
-    """抓「改了构建脚本/库却忘了重新生成 README.docx」。
+    """检测构建脚本或库改动后 README.docx 未同步重新生成。
 
-    只比正文文本与段落数，不比字节 —— docx 是 zip，
-    docProps 时间戳每次构建都不同，字节比对必然假阳性。
+    仅比对正文文本与段落数，不比对字节：docx 为 zip 包，
+    docProps 时间戳每次构建均不同，字节比对会产生假阳性。
     """
     committed = REPO_ROOT / "README.docx"
     assert committed.exists(), "README.docx 应已提交到仓库"
@@ -150,6 +150,6 @@ def test_committed_readme_in_sync(built_readme):
         "  段落 %d:\n    新构建: %r\n    已提交: %r" % (i, a, b) for i, a, b in diff[:5]
     )
     assert not diff, (
-        "README.docx 与构建脚本不同步 —— "
+        "README.docx 与构建脚本不同步："
         "运行 python scripts/_build_readme_docx.py 后重新提交\n%s" % sample
     )

@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
 """docx_validator.py 的单元测试。
 
-重点不是证明校验器「能通过」，而是证明它「能发现问题」——
-一个停止检测目标的校验器会永远报告通过，比没有校验器更危险。
+正面用例验证完好包通过；负面用例验证各检查项能被触发，
+防止校验器退化为始终通过的空壳。
 
-零第三方依赖（pytest 之外）。
+除 pytest 外无第三方依赖。
 """
 import os
 import subprocess
@@ -20,25 +20,25 @@ def test_valid_docx_passes(make_docx):
 
 
 def test_malformed_xml_fails(make_docx):
-    """check 2：未闭合的根元素必须被抓住。"""
+    """check 2：未闭合根元素应被检出。"""
     assert validate_docx(make_docx(break_xml=True)) is False
 
 
 def test_missing_rel_target_fails(make_docx):
-    """check 3：.rels 指向包内不存在的部件必须被抓住。"""
+    """check 3：.rels 指向包内不存在的部件应被检出。"""
     assert validate_docx(make_docx(break_rel=True)) is False
 
 
 def test_edge_whitespace_without_preserve_fails(make_docx):
-    """check 5：带边空格的 w:t 缺 xml:space='preserve' 必须被抓住。"""
+    """check 5：带边空格的 w:t 缺 xml:space='preserve' 应被检出。"""
     assert validate_docx(make_docx(break_whitespace=True)) is False
 
 
 def test_cli_exit_codes(make_docx):
-    """退出码是 CI 与外部调用方唯一能依赖的契约（0=通过，1=失败）。
+    """验证 CLI 退出码契约（0=通过，1=失败）。
 
-    用 PYTHONIOENCODING 固定子进程输出编码，避免 Windows 上按本地
-    代码页写出导致解码失败。
+    固定 PYTHONIOENCODING=utf-8，避免 Windows 子进程按本地代码页
+    输出导致解码失败。
     """
     env = dict(os.environ, PYTHONIOENCODING="utf-8")
 

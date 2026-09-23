@@ -470,7 +470,7 @@ def add_table_spacer(doc, size_pt=None):
 
     Word 的间距只属于**段落**，表格自身没有段后属性（`w:tblPr` 里只有浮动
     定位与单元格间距）。所以表名（段后 6pt）下方天然有间距，而表格下方若
-    没有段落，正文就会紧贴表格底边——实测仅 3.85pt，视觉上贴合。
+    没有段落，正文会紧贴表格底边（约 3.85pt，视觉上贴合）。
 
     本函数插入一个高度可精确控制的最小空段：
       * 字号同时写入**段落标记**的 `w:pPr/w:rPr` 与 run 的 `w:rPr`，
@@ -479,8 +479,8 @@ def add_table_spacer(doc, size_pt=None):
       * 行距用 `lineRule="exact"` 锁死为与字号相同的磅值，避免被 1.5 倍行距撑开。
       * 段落居中，使段落标记显示在页面水平中间。
 
-    实测（本机 Word 渲染，A4 默认预设）：空段设定值与表下纯留白增量近似 1:1，
-    12pt 档使表下纯留白由 3.85pt 提升到 15.90pt。
+    以下数据基于本机 Word 渲染、A4 默认预设：空段设定值与表下纯留白增量
+    近似 1:1，12pt 档使表下纯留白由 3.85pt 提升到 15.90pt。
 
     Args:
         doc: the Document to add the spacer to.
@@ -492,7 +492,7 @@ def add_table_spacer(doc, size_pt=None):
     p.alignment = WD_ALIGN_PARAGRAPH.CENTER
     p.paragraph_format.first_line_indent = Pt(0)
 
-    # 字号写入段落标记的 w:pPr/w:rPr —— 空段高度由段落标记字符格式决定
+    # 字号写入段落标记的 w:pPr/w:rPr；空段高度由段落标记字符格式决定
     pPr = p._p.get_or_add_pPr()
     mark_rPr = pPr.find(qn('w:rPr'))
     if mark_rPr is None:
@@ -699,8 +699,8 @@ def _new_table(doc, row_count, col_widths_cm, margins=60, borders=None):
     borders = borders or set_table_border
     # 总宽 = 列宽之和，只取整一次；各列按四舍五入取 twips，末列用差值补齐，
     # 再以 Twips() 原样写回 gridCol 与 tcW。于是 ΣgridCol == ΣtcW == tblW
-    # 严格相等，且同一总宽无论分成几列，表宽都是同一个数——全宽层与并列层
-    # 不可能差出 1 twip（不要用 Cm() 反算，它在 twips→cm→EMU 时会掉半个 twip）。
+    # 严格相等，且同一总宽无论分成几列，表宽都是同一个数：全宽层与并列层
+    # 不会差出 1 twip。避免用 Cm() 反算，它在 twips→cm→EMU 换算时会丢失半个 twip。
     total_twips = Cm(sum(col_widths_cm)).twips
     col_twips = [Cm(w).twips for w in col_widths_cm]
     col_twips[-1] = total_twips - sum(col_twips[:-1])

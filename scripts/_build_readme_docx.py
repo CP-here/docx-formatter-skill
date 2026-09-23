@@ -5,14 +5,14 @@
 本技能是函数库，docx_layout_kit.py 没有 main() 入口，直接运行没有任何输出。
 你要做的是**新建一个自己的脚本**，把内容写进去。本文件就是那份脚本的范式：
 
-  1. 读第 17 行起的 import 段 —— 需要哪些函数就从 docx_layout_kit 导入哪些
-  2. 读第 52 行起的正文 —— add_cover_page → add_toc → add_h1/add_h2/add_h3
+  1. 读第 17 行起的 import 段：需要哪些函数就从 docx_layout_kit 导入哪些
+  2. 读第 52 行起的正文：add_cover_page → add_toc → add_h1/add_h2/add_h3
      → add_body → 图表 → add_bibliography 的**调用顺序**就是标准顺序
   3. 在你的脚本里照这个顺序写自己的内容
 
 【本文件里哪些部分不必照抄】
-下面三行是本文件作为「项目内构建脚本」特有的，你在临时工作目录里写自己的脚本
-时**不需要**：把你的脚本与 docx_layout_kit.py 放在同一目录，直接 import 即可。
+下面三行是本文件作为「项目内构建脚本」特有的；在临时工作目录编写自己的脚本
+时**不需要**：将脚本与 docx_layout_kit.py 放在同一目录，直接 import 即可。
 
     SCRIPTS_DIR = os.path.dirname(os.path.abspath(__file__))
     PROJECT_ROOT = os.path.dirname(SCRIPTS_DIR)
@@ -21,10 +21,10 @@
 同理，末尾的 doc.save(PROJECT_ROOT + "/README.docx") 也只是本文件的输出目标，
 换成你自己的输出路径。
 
-【三条最易踩的顺序规则】
+【三条关键顺序规则】
   1. set_preset() 必须在 setup_document() 之前调用（页边距与默认字体在此时读取）
   2. add_cover_page() 必须写在所有其它内容之前（它以分节符结束封面节）
-  3. 页码分节 —— 有目录时 add_toc() 已自动处理；只有封面无目录时需手动
+  3. 页码分节：有目录时 add_toc() 已自动处理；只有封面无目录时需手动
      start_body(doc)；两者都无则不用管
 
 【用法】在项目根目录执行：python scripts/_build_readme_docx.py

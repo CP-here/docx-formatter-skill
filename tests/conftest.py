@@ -5,8 +5,10 @@ conftest.py 由 pytest 自动加载，且先于同目录下的测试模块，
 因此这里的 sys.path 注入能保证测试文件顶层的
 `from omml_math_kit import ...` 成功执行。
 
-make_docx 刻意不使用 python-docx —— 用 zipfile 手写最小包，
-使 test_omml_math_kit.py 与 test_docx_validator.py 保持零第三方依赖。
+make_docx 以 zipfile 手写最小 .docx 包，不引入 python-docx，
+使 test_omml_math_kit.py 与 test_docx_validator.py 除 pytest 外
+无第三方依赖。整个测试套件仍依赖 python-docx，因为
+test_build_readme.py 需端到端运行依赖 python-docx 的构建脚本。
 """
 import sys
 import zipfile
@@ -21,8 +23,8 @@ ASSETS = REPO_ROOT / "assets"
 sys.path.insert(0, str(SCRIPTS))
 
 # ---- 最小 .docx 的四个部件 -------------------------------------------------
-# 结构自洽即可通过 docx_validator 的 5 项检查；不追求真实文档的完整性，
-# 只求每个 break_* 开关能精确弄坏对应的那一项检查。
+# 最小包结构自洽，可通过 docx_validator 全部 5 项检查；
+# 每个 break_* 开关仅破坏其中一项，便于定位。
 
 _CONTENT_TYPES = """<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">
