@@ -431,16 +431,16 @@ def add_body_with_math(doc, parts):
 # CODE BLOCK / DATA TABLE / MATH-IN-CELL HELPERS
 # ============================================================
 
-def add_code_block(doc, code, font_size=9, space_after=6):
+def add_code_block(doc, code, font_size=9, space_after=12):
     """Code block: monospace (Consolas) lines with light-gray paragraph shading.
 
     Args:
         code: source code string; each line becomes one paragraph.
         font_size: code font size in pt (default 9).
-        space_after: 代码块**末行**的段后间距（pt，默认 6），把代码块与后续
-            正文分开。只挂到末行：底纹按段落填充，若逐行设段后，灰底行之间
-            会出现白色缝隙，破坏整块观感；段后在行框之外，不会被底纹盖住。
-            传 0 可关闭。
+        space_after: 代码块**末行**的段后间距（pt，默认 12），把代码块与后续
+            正文分开（12 与数据表下的 `table.gap_after` 呼应）。只挂到末行：
+            底纹按段落填充，若逐行设段后，灰底行之间会出现白色缝隙，破坏整块
+            观感；段后在行框之外，不会被底纹盖住。传 0 可关闭。
     """
     lines = code.split("\n")
     for idx, line in enumerate(lines):
