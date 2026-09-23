@@ -438,7 +438,7 @@ add_body(doc, "setup_document 自动调用 reset_counters，每次生成文档�
 
 # ============ 核心模块·代码块与数据表 ============
 add_h2(doc, "4.9 代码块与数据表")
-add_body(doc, "add_code_block 以 Consolas 等宽字体渲染代码内容，默认 9pt，浅灰底纹，无首行缩进，逐行成段：")
+add_body(doc, "add_code_block 以 Consolas 等宽字体渲染代码内容，默认 9pt，浅灰底纹，无首行缩进，逐行成段；末行带 6pt 段后（space_after 可调，传 0 关闭），与后续正文拉开：")
 add_code_block(doc, 'add_code_block(doc, "python docx_validator.py output.docx --verbose")')
 add_body(doc, "add_data_table 生成数据型表格，灰色表头黑体加粗居中，固定列宽，数据行末列左对齐、其余列居中：")
 add_code_block(doc, """add_table_caption(doc, "排版标准")

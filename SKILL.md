@@ -115,7 +115,7 @@ tags:
 | `add_item_para(doc, label, text)`                                                                   | 加粗标签 + 正文，首行缩进。正文支持 `**bold**` 和 `[n]` 引用上标                                                                    |
 | `add_eq_para(doc, math_xml)`                                                                        | 居中块级公式段落（接收 omml_math_kit 的 OMML XML 字符串）                                                                        |
 | `add_body_with_math(doc, parts)`                                                                    | 正文与行内公式混排段落（parts 为 `("text", str)` / `("math", xml)` 列表）                                                      |
-| `add_code_block(doc, code, font_size)`                                                              | 代码块：Consolas 等宽字体（默认9pt），浅灰底纹（F2F2F2），逐行段落，左缩进                                                                 |
+| `add_code_block(doc, code, font_size, space_after)`                                                 | 代码块：Consolas 等宽字体（默认9pt），浅灰底纹（F2F2F2），逐行段落，左缩进；末行段后 6pt 与正文拉开                                                          |
 | `add_data_table(doc, headers, rows, col_widths, font_size)`                                         | 数据表：灰色表头（D9D9D9 黑体加粗居中），数据行宋体，末列左对齐其余居中，固定列宽。**末尾自动追加表下间距段**（见下行）                              |
 | `add_table_spacer(doc, size_pt)`                                                                    | 表格下方的固定间距段，把表格与后续正文分开。Word 的间距只属于段落、表格自身无段后属性，不追加则正文紧贴表底。默认高度取预设 `table.gap_after`（12pt），由 `add_data_table` 自动调用 |
 | `add_math_to_cell(cell, omml_xml)`                                                                  | 向表格单元格插入行内 OMML 公式（居中），配合 `inlineMath()` 用于公式对照表等场景                                                            |

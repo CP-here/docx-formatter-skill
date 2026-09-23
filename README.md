@@ -312,7 +312,7 @@ setup_document 自动调用 reset_counters，每次生成文档均从图1与表1
 
 ### 代码块与数据表
 
-add_code_block 以 Consolas 等宽字体渲染代码内容，默认 9pt，浅灰底纹，无首行缩进，逐行成段：
+add_code_block 以 Consolas 等宽字体渲染代码内容，默认 9pt，浅灰底纹，无首行缩进，逐行成段；末行带 6pt 段后（可用 space_after 调整或传 0 关闭），把代码块与后续正文分开：
 
 ```python
 add_code_block(doc, "python docx_validator.py output.docx --verbose")

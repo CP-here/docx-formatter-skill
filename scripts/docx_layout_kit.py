@@ -431,21 +431,26 @@ def add_body_with_math(doc, parts):
 # CODE BLOCK / DATA TABLE / MATH-IN-CELL HELPERS
 # ============================================================
 
-def add_code_block(doc, code, font_size=9):
+def add_code_block(doc, code, font_size=9, space_after=6):
     """Code block: monospace (Consolas) lines with light-gray paragraph shading.
 
     Args:
         code: source code string; each line becomes one paragraph.
         font_size: code font size in pt (default 9).
+        space_after: 代码块**末行**的段后间距（pt，默认 6），把代码块与后续
+            正文分开。只挂到末行：底纹按段落填充，若逐行设段后，灰底行之间
+            会出现白色缝隙，破坏整块观感；段后在行框之外，不会被底纹盖住。
+            传 0 可关闭。
     """
-    for line in code.split("\n"):
+    lines = code.split("\n")
+    for idx, line in enumerate(lines):
         p = doc.add_paragraph()
         pf = p.paragraph_format
         pf.first_line_indent = Pt(0)
         pf.left_indent = Pt(18)
         pf.line_spacing = 1.15
         pf.space_before = Pt(0)
-        pf.space_after = Pt(0)
+        pf.space_after = Pt(space_after if idx == len(lines) - 1 else 0)
         shd = OxmlElement('w:shd')
         shd.set(qn('w:val'), 'clear')
         shd.set(qn('w:color'), 'auto')
