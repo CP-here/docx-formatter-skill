@@ -123,7 +123,10 @@ add_h2(doc, "1.1 方式一：让 Agent 帮你装（推荐）")
 add_body(doc, "在聊天窗口中直接输入下面这句话，让 Agent 安装；安装完成后直接让它用本技能排版即可：")
 add_code_block(doc, "帮我安装 https://github.com/CP-here/docx-formatter-skill")
 add_h2(doc, "1.2 方式二：下载 Release 压缩包")
-add_body(doc, "从 Releases 页面的 Assets 下载 `docx-formatter.zip`，按客户端类型安装：")
+add_link_para(doc, [
+    ("link", "https://github.com/CP-here/docx-formatter-skill/releases/latest/download/docx-formatter.zip", "下载最新版"),
+    ("text", "（Releases 页面 Assets 中的 `docx-formatter.zip`），按客户端类型安装："),
+])
 add_item_para(doc, "支持上传技能压缩包或技能市场的客户端：", "腾讯 WorkBuddy（SkillHub 上传 zip）、豆包桌面版 / 豆包工作（技能·连接器面板）、阿里千问办公 / QoderWork、通义桌面 agent、Kimi Work、智谱 AutoGLM / AutoClaw、百度 DuMate（百度搭子）、阶跃 AI 桌面 / OpenClaw、有道 LobsterAI（技能商店 / 本地导入）、飞书 AI、TRAE Work、扣子 Coze 等，将 zip 或解压后的技能文件夹按各客户端“上传技能 / 导入 Skill / 本地技能”入口添加即可；")
 add_item_para(doc, "代码或 agent 类客户端：", "腾讯 CodeBuddy、字节 TRAE、DeepSeek Harness、OpenCode，以及兼容 Claude / Cursor 技能格式的客户端，将解压后的 `docx-formatter/` 放入对应技能目录（如 `~/.claude/skills/`、`~/.cursor/skills/`、项目内 `.agents/skills/` 等）；")
 add_item_para(doc, "其他不支持手动安装技能的桌面助手：", "如 ChatGPT 桌面版、统信 UOS AI、Chatbox 及各厂商“电脑版 / 桌面版”对话客户端，可直接提供 zip 文件让 Agent 自行安装。")

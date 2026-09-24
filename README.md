@@ -1,6 +1,7 @@
 # docx-formatter 中文 Word 专业排版技能
 
 [![tests](https://github.com/CP-here/docx-formatter-skill/actions/workflows/tests.yml/badge.svg)](https://github.com/CP-here/docx-formatter-skill/actions/workflows/tests.yml)
+[![license: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
 docx-formatter 将文本或 Markdown 内容排版为专业的中文 Word 文档。最常见的用法是把 AI 生成的 Markdown 正文（报告、说明、方案、论文、讲义等）按学术与工程规范排版为 .docx，并借助库函数补充 Markdown 无法表达的构件；覆盖章节结构、正文、数学公式、表格、流程图、目录、引用上标与文档验证的完整排版链路，输出符合学术与工程规范的 .docx 文件。排版效果可参考仓库中的 [README.docx](README.docx) 与 [README.pdf](README.pdf)。
 
@@ -22,7 +23,7 @@ docx-formatter 将文本或 Markdown 内容排版为专业的中文 Word 文档�
 
 ### 方式二：下载 Release 压缩包
 
-从 Releases 页面的 Assets 下载 `docx-formatter.zip`，按客户端类型安装：
+[下载最新版](https://github.com/CP-here/docx-formatter-skill/releases/latest/download/docx-formatter.zip)（Releases 页面 Assets 中的 `docx-formatter.zip`），按客户端类型安装：
 
 - 支持上传技能压缩包或技能市场的客户端：腾讯 WorkBuddy（SkillHub 上传 zip）、豆包桌面版 / 豆包工作（技能·连接器面板）、阿里千问办公 / QoderWork、通义桌面 agent、Kimi Work、智谱 AutoGLM / AutoClaw、百度 DuMate（百度搭子）、阶跃 AI 桌面 / OpenClaw、有道 LobsterAI（技能商店 / 本地导入）、飞书 AI、TRAE Work、扣子 Coze 等，将 zip 或解压后的技能文件夹按各客户端“上传技能 / 导入 Skill / 本地技能”入口添加即可；
 - 代码或 agent 类客户端：腾讯 CodeBuddy、字节 TRAE、DeepSeek Harness、OpenCode，以及兼容 Claude / Cursor 技能格式的客户端，将解压后的 `docx-formatter/` 放入对应技能目录（如 `~/.claude/skills/`、`~/.cursor/skills/`、项目内 `.agents/skills/` 等）；
